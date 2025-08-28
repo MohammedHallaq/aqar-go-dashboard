@@ -15,7 +15,7 @@ const LoginScreen = ({ onLogin }) => {
     setIsLoading(true);
     setError('');
     try {
-      let res = await axios.post('http://116.203.254.150:8001/api/auth/login', {
+      let res = await axios.post('https://aqargo.duckdns.org/api/auth/login', {
         email: credentials.email,
         password: credentials.password,
       });

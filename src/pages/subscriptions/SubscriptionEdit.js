@@ -31,7 +31,7 @@ const SubscriptionEdit = () => {
   // دالة جلب الخطط مع useCallback
   const fetchPlans = useCallback(async () => {
     try {
-      const response = await axios.get('http://116.203.254.150:8001/api/plans', {
+      const response = await axios.get('https://aqargo.duckdns.org/api/plans', {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -52,7 +52,7 @@ const SubscriptionEdit = () => {
   // دالة جلب بيانات الاشتراك مع useCallback
   const fetchSubscription = useCallback(async () => {
     try {
-      const response = await axios.get(`http://116.203.254.150:8001/api/subscriptions/${id}`, {
+      const response = await axios.get(`https://aqargo.duckdns.org/api/subscriptions/${id}`, {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -112,7 +112,7 @@ const SubscriptionEdit = () => {
     setEmailValidation({ loading: true, valid: false });
     
     try {
-      const response = await axios.post('http://116.203.254.150:8001/api/user/getUserByEmail', {email:email},{
+      const response = await axios.post('https://aqargo.duckdns.org/api/user/getUserByEmail', {email:email},{
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -223,7 +223,7 @@ const SubscriptionEdit = () => {
 
       if (isEditing) {
         // تحديث الاشتراك الموجود
-        const response = await axios.put(`http://116.203.254.150:8001/api/subscriptions/${id}`, submissionData, {
+        const response = await axios.put(`https://aqargo.duckdns.org/api/subscriptions/${id}`, submissionData, {
           headers: {
             Accept: "application/json",
             Authorization: "Bearer " + context.auth.token,
@@ -236,7 +236,7 @@ const SubscriptionEdit = () => {
         }
       } else {
         // إنشاء اشتراك جديد
-        const response = await axios.post('http://116.203.254.150:8001/api/subscriptions/client', submissionData, {
+        const response = await axios.post('https://aqargo.duckdns.org/api/subscriptions/client', submissionData, {
           headers: {
             Accept: "application/json",
             Authorization: "Bearer " + context.auth.token,

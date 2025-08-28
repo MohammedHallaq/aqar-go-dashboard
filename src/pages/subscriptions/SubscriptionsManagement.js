@@ -23,7 +23,7 @@ const SubscriptionsManagement = () => {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get('http://116.203.254.150:8001/api/plans', {
+      const response = await axios.get('https://aqargo.duckdns.org/api/plans', {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -57,7 +57,7 @@ const SubscriptionsManagement = () => {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get('http://116.203.254.150:8001/api/subscriptions/admin', {
+      const response = await axios.get('https://aqargo.duckdns.org/api/subscriptions/admin', {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -94,7 +94,7 @@ const SubscriptionsManagement = () => {
 
   const handleRenewSubscription = async (id) => {
     try {
-      const response = await axios.put(`http://116.203.254.150:8001/api/subscriptions/${id}/renew`, {}, {
+      const response = await axios.put(`https://aqargo.duckdns.org/api/subscriptions/${id}/renew`, {}, {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -115,7 +115,7 @@ const SubscriptionsManagement = () => {
   const handleCancelSubscription = async (id) => {
     if (window.confirm('هل أنت متأكد من إلغاء هذا الاشتراك؟')) {
       try {
-        const response = await axios.put(`http://116.203.254.150:8001/api/subscriptions/${id}/cancel`, {}, {
+        const response = await axios.put(`https://aqargo.duckdns.org/api/subscriptions/${id}/cancel`, {}, {
           headers: {
             Accept: "application/json",
             Authorization: "Bearer " + context.auth.token,
@@ -137,7 +137,7 @@ const SubscriptionsManagement = () => {
   const handleDeleteSubscription = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الاشتراك؟')) {
       try {
-        const response = await axios.delete(`http://116.203.254.150:8001/api/subscriptions/${id}`, {
+        const response = await axios.delete(`https://aqargo.duckdns.org/api/subscriptions/${id}`, {
           headers: {
             Accept: "application/json",
             Authorization: "Bearer " + context.auth.token,
@@ -158,7 +158,7 @@ const SubscriptionsManagement = () => {
 
   const handleSubscribe = async (planId) => {
     try {
-      const response = await axios.post(`http://116.203.254.150:8001/api/subscriptions`, {
+      const response = await axios.post(`https://aqargo.duckdns.org/api/subscriptions`, {
         plan_id: planId
       }, {
         headers: {
@@ -182,7 +182,7 @@ const SubscriptionsManagement = () => {
   const handleDeletePlan = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذه الخطة؟ سيؤثر هذا على جميع المشتركين فيها.')) {
       try {
-        const response = await axios.delete(`http://116.203.254.150:8001/api/plans/${id}`, {
+        const response = await axios.delete(`https://aqargo.duckdns.org/api/plans/${id}`, {
           headers: {
             Accept: "application/json",
             Authorization: "Bearer " + context.auth.token,
@@ -206,7 +206,7 @@ const SubscriptionsManagement = () => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     
     try {
-      const response = await axios.put(`http://116.203.254.150:8001/api/plans/${id}/status`, {
+      const response = await axios.put(`https://aqargo.duckdns.org/api/plans/${id}/status`, {
         status: newStatus
       }, {
         headers: {

@@ -9,7 +9,7 @@ const UsersManagement = () => {
   const [users, setUsers] = useState([]);
   const [runUser,setRun] = useState(0);
   useEffect(() => {
-        axios.get('http://116.203.254.150:8001/api/user/getUsers',
+        axios.get('https://aqargo.duckdns.org/api/user/getUsers',
             {
                 headers:{
                     Accept:"application/json",
@@ -21,7 +21,7 @@ const UsersManagement = () => {
     },[runUser]);
     async function deleteUser(id){
         try{
-            let res = await axios.delete(`http://116.203.254.150:8001/api/user/delete/${id}`,{
+            let res = await axios.delete(`https://aqargo.duckdns.org/api/user/delete/${id}`,{
                 headers:{
                     Accept:"application/json",
                     Authorization:"Bearer" + context.auth.token,

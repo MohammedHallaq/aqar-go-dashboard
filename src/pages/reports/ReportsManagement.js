@@ -71,7 +71,7 @@ const ReportsManagement = () => {
         ...filters
       };
 
-      const response = await axios.post('http://116.203.254.150:8001/api/report/index', params, {
+      const response = await axios.post('https://aqargo.duckdns.org/api/report/index', params, {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -133,7 +133,7 @@ const ReportsManagement = () => {
   const handleDeleteReport = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذا البلاغ؟')) {
       try {
-        await axios.delete(`http://116.203.254.150:8001/api/report/delete/${id}`, {
+        await axios.delete(`https://aqargo.duckdns.org/api/report/delete/${id}`, {
           headers: {
             Authorization: "Bearer " + context.auth.token,
           },
@@ -151,7 +151,7 @@ const ReportsManagement = () => {
 
   const handleCreateReport = async () => {
     try {
-      const response = await axios.post('http://116.203.254.150:8001/api/report/create', newReport, {
+      const response = await axios.post('https://aqargo.duckdns.org/api/report/create', newReport, {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,

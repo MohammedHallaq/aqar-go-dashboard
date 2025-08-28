@@ -27,7 +27,7 @@ const PlanForm = () => {
   // دالة جلب بيانات الخطة مع useCallback
   const fetchPlan = useCallback(async () => {
     try {
-      const response = await axios.get(`http://116.203.254.150:8001/api/plans/${id}`, {
+      const response = await axios.get(`https://aqargo.duckdns.org/api/plans/${id}`, {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -158,7 +158,7 @@ const PlanForm = () => {
         }
         
         // تحديث الخطة الموجودة
-        response = await axios.post(`http://116.203.254.150:8001/api/plans/${id}`, preparedData, {
+        response = await axios.post(`https://aqargo.duckdns.org/api/plans/${id}`, preparedData, {
           headers: {
             Accept: "application/json",
             Authorization: "Bearer " + context.auth.token,
@@ -167,7 +167,7 @@ const PlanForm = () => {
         });
       } else {
         // إنشاء خطة جديدة
-        response = await axios.post('http://116.203.254.150:8001/api/plans', preparedData, {
+        response = await axios.post('https://aqargo.duckdns.org/api/plans', preparedData, {
           headers: {
             Accept: "application/json",
             Authorization: "Bearer " + context.auth.token,

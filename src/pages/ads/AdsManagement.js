@@ -38,7 +38,7 @@ const AdsManagement = () => {
     setError(null);
     
     try {
-      const response = await axios.get(`http://116.203.254.150:8001/api/ad/index?page=${page}`, {
+      const response = await axios.get(`https://aqargo.duckdns.org/api/ad/index?page=${page}`, {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -74,7 +74,7 @@ const AdsManagement = () => {
   const handleDeleteAd = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
       try {
-        await axios.delete(`http://116.203.254.150:8001/api/ad/delete/${id}`, {
+        await axios.delete(`https://aqargo.duckdns.org/api/ad/delete/${id}`, {
           headers: {
             Authorization: "Bearer " + context.auth.token,
           },
@@ -99,8 +99,8 @@ const AdsManagement = () => {
     
     try {
       const endpoint = newStatus 
-        ? `http://116.203.254.150:8001/api/ad/activate/${id}`
-        : `http://116.203.254.150:8001/api/ad/unactivate/${id}`;
+        ? `https://aqargo.duckdns.org/api/ad/activate/${id}`
+        : `https://aqargo.duckdns.org/api/ad/unactivate/${id}`;
       
       await axios.get(endpoint, {
         headers: {

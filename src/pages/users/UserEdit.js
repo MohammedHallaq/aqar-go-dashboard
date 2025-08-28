@@ -22,7 +22,7 @@ const UserEdit = () => {
 
   useEffect(() => {
     if (isEditing) {
-      axios(`http://116.203.254.150:8001/api/user/show/${id}`,{
+      axios(`https://aqargo.duckdns.org/api/user/show/${id}`,{
                 headers:{
                     Accept:"application/json",
                     Authorization:"Bearer" + context.auth.token,
@@ -78,8 +78,8 @@ const UserEdit = () => {
     return Object.keys(newErrors).length === 0;
   };
   const url = isEditing 
-  ? `http://116.203.254.150:8001/api/user/update/${id}` 
-  : `http://116.203.254.150:8001/api/user/create`;
+  ? `https://aqargo.duckdns.org/api/user/update/${id}` 
+  : `https://aqargo.duckdns.org/api/user/create`;
   async function Submit(e) {
         e.preventDefault();
         if (!validateForm()) {
