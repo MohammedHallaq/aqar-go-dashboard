@@ -246,7 +246,7 @@ const AdsManagement = () => {
         <div className="flex items-center space-x-3 space-x-reverse">
           {ad.property.images?.[0]?.image_url && (
             <img 
-              src={ad.property.images[0].image_url} 
+              src={ad.property.images[0].image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} 
               alt={ad.property.name || 'عقار'}
               className="w-16 h-16 object-cover rounded-lg"
               onError={(e) => {
@@ -277,7 +277,7 @@ const AdsManagement = () => {
             <div className="flex items-center space-x-3 space-x-reverse">
               {ad.property.user.profile?.image_url && (
                 <img 
-                  src={ad.property.user.profile.image_url} 
+                  src={ad.property.user.profile.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} 
                   alt={ad.property.user.first_name || 'مستخدم'}
                   className="w-10 h-10 object-cover rounded-full"
                 />
@@ -474,7 +474,7 @@ const AdsManagement = () => {
   };
 
   const renderAdImage = (ad) => {
-    const firstImage = ad.property?.images?.[0]?.image_url;
+    const firstImage = ad.property?.images?.[0]?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org");
     
     return (
       <div className="relative h-48 bg-gray-100 overflow-hidden rounded-t-lg cursor-pointer" onClick={() => viewPropertyDetails(ad)}>
@@ -776,7 +776,7 @@ const AdsManagement = () => {
               <div className="relative h-64 bg-gray-100 rounded-lg mb-6">
                 {selectedAd.property.images?.[0]?.image_url ? (
                   <img 
-                    src={selectedAd.property.images[0].image_url} 
+                    src={selectedAd.property.images[0].image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} 
                     alt={selectedAd.property.name || 'عقار'}
                     className="w-full h-full object-cover rounded-lg"
                   />

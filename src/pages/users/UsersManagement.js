@@ -106,9 +106,9 @@ const UsersManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1 }</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                     {user.profile?.image_url && 
+                     {user.profile?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org") && 
                         <img 
-                           src={user.profile?.image_url ?? "/default-avatar.png"} 
+                           src={user.profile?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org") ?? "/default-avatar.png"} 
                           alt="Profile" 
                           className="w-12 h-12 rounded-full object-cover ml-3"
                         /> 

@@ -86,7 +86,7 @@ const AdEdit = () => {
           budget: '5000', // يمكن تعديله حسب البيانات الفعلية
           targetAudience: 'الباحثين عن عقارات',
           keywords: 'عقارات',
-          imageUrl: adData.property?.images?.[0]?.image_url || '',
+          imageUrl: adData.property?.images?.[0]?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org") || '',
           linkUrl: `https://example.com/properties/${adData.property_id}`,
           status: adData.is_active ? 'active' : 'paused',
           propertyId: adData.property_id?.toString() || ''
@@ -215,7 +215,7 @@ const AdEdit = () => {
       propertyId: property.id.toString(),
       title: property.name || 'إعلان عقار',
       description: property.description || '',
-      imageUrl: property.images?.[0]?.image_url || '',
+      imageUrl: property.images?.[0]?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org") || '',
       linkUrl: `https://example.com/properties/${property.id}`
     }));
     setShowPropertySelector(false);

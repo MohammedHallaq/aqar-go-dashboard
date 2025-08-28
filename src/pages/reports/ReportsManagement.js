@@ -461,7 +461,7 @@ const ReportsManagement = () => {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           {report.user?.profile?.image_url ? (
-                            <img className="h-10 w-10 rounded-full object-cover" src={report.user.profile.image_url} alt="" />
+                            <img className="h-10 w-10 rounded-full object-cover" src={report.user.profile.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} alt="" />
                           ) : (
                             <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                               <i className="fas fa-user text-gray-400"></i>
@@ -544,7 +544,7 @@ const ReportsManagement = () => {
                   <div className="flex items-center">
                     {selectedReport.user?.profile?.image_url ? (
                       <img 
-                        src={selectedReport.user.profile.image_url} 
+                        src={selectedReport.user.profile.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} 
                         alt={selectedReport.user.first_name} 
                         className="w-12 h-12 rounded-full object-cover ml-3"
                       />

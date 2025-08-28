@@ -560,7 +560,7 @@ const SubscriptionsManagement = () => {
                     <div className="flex items-center">
                       {subscription.user.profile?.image_url && 
                         <img 
-                          src={subscription.user.profile?.image_url ?? "/default-avatar.png"} 
+                          src={subscription.user.profile?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org") ?? "/default-avatar.png"} 
                           alt="Profile" 
                           className="w-12 h-12 rounded-full object-cover ml-3"
                         /> 
