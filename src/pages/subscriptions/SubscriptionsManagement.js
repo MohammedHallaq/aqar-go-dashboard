@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStatusBadgeClasses } from '../../utils/helpers';
 import axios from 'axios';
+import { User } from '../../Contexts/Context';
 
 const SubscriptionsManagement = () => {
   const navigate = useNavigate();
@@ -13,299 +14,190 @@ const SubscriptionsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [useMockData, setUseMockData] = useState(false);
-  const [showPlanForm, setShowPlanForm] = useState(false);
-  const [editingPlan, setEditingPlan] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const context = useContext(User);
 
-  // بيانات وهمية للخطط
-  const mockPlans = [
-    {
-      id: 1,
-      name: "المجانية",
-      price: 0,
-      type: "free",
-      duration: "شهرياً (مجانية للابد)",
-      features: ["3 إعلانات كحد أقصى", "وصول إعلاني عادي", "خدمة دعم أساسية"],
-      status: "active"
-    },
-    {
-      id: 2,
-      name: "المميزة",
-      price: 4.99,
-      type: "premium",
-      duration: "شهرياً",
-      features: ["النشر حتى 15 إعلان", "وصول إعلاني مميز", "دعم مميز على مدار الساعة", "والمزيد..."],
-      status: "active"
-    },
-    {
-      id: 3,
-      name: "المحترفة",
-      price: 9.99,
-      type: "premium",
-      duration: "شهرياً",
-      features: ["عدد غير محدود من الإعلانات", "أولوية في النتائج", "دعم فني متقدم", "تقارير أداء"],
-      status: "active"
-    }
-  ];
-
-  // بيانات وهمية للاشتراكات
-  const mockSubscriptions = [
-    { 
-      id: 1, 
-      user: { name: 'أحمد محمد' }, 
-      plan: { name: 'المميزة', price: 4.99, type: 'premium' }, 
-      start_date: '2024-01-01', 
-      end_date: '2024-12-31', 
-      status: 'active'
-    },
-    { 
-      id: 2, 
-      user: { name: 'فاطمة علي' }, 
-      plan: { name: 'المجانية', price: 0, type: 'free' }, 
-      start_date: '2024-01-15', 
-      end_date: '2024-07-15', 
-      status: 'active'
-    },
-    { 
-      id: 3, 
-      user: { name: 'سارة أحمد' }, 
-      plan: { name: 'المحترفة', price: 9.99, type: 'premium' }, 
-      start_date: '2023-06-01', 
-      end_date: '2023-12-01', 
-      status: 'expired'
-    }
-  ];
-
-  // جلب خطط الاشتراك من API
-  useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await axios.get('http://116.203.254.150:8001/api/plans', {
-          headers: {
-            Accept: "application/json",
-            Authorization: "Bearer " + localStorage.getItem('auth_token'),
-          },
-        });
-        
-        if (response.data && response.data.data) {
-          setPlans(response.data.data);
-          setUseMockData(false);
-        } else {
-          throw new Error('لا توجد بيانات');
-        }
-      } catch (err) {
-        console.error('Error fetching plans:', err);
-        setError('فشل في تحميل خطط الاشتراك. يتم عرض بيانات تجريبية');
-        setPlans(mockPlans);
-        setUseMockData(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPlans();
-  }, []);
-
-  // جلب الاشتراكات من API
-  useEffect(() => {
-    const fetchSubscriptions = async () => {
-      if (activeTab !== 'management') return;
+  // دالة جلب الخطط مع useCallback
+  const fetchPlans = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
       
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await axios.get('http://116.203.254.150:8001/api/subscriptions', {
-          headers: {
-            Accept: "application/json",
-            Authorization: "Bearer " + localStorage.getItem('auth_token'),
-          },
-        });
-        
-        if (response.data && response.data.data) {
-          setSubscriptions(response.data.data);
-          setUseMockData(false);
-        } else {
-          throw new Error('لا توجد بيانات');
-        }
-      } catch (err) {
-        console.error('Error fetching subscriptions:', err);
-        setError('فشل في تحميل الاشتراكات. يتم عرض بيانات تجريبية');
-        setSubscriptions(mockSubscriptions);
-        setUseMockData(true);
-      } finally {
-        setLoading(false);
+      const response = await axios.get('http://116.203.254.150:8001/api/plans', {
+        headers: {
+          Accept: "application/json",
+          Authorization: "Bearer " + context.auth.token,
+        },
+      });
+      
+      
+      
+      if ( response.data.plans) {
+        setPlans(response.data.plans);
+        setUseMockData(false);
+      } else if (response.data && response.data.data) {
+        // هيكل بديل للبيانات
+        setPlans(response.data.data);
+        setUseMockData(false);
+      } else {
+        throw new Error('لا توجد بيانات');
       }
-    };
+    } catch (err) {
+      console.error('Error fetching plans:', err);
+      setError('فشل في تحميل خطط الاشتراك: ' + (err.response?.data?.message || err.message));
+      setUseMockData(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [context.auth.token]);
 
-    fetchSubscriptions();
-  }, [activeTab]);
+  // دالة جلب الاشتراكات مع useCallback
+  const fetchSubscriptions = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await axios.get('http://116.203.254.150:8001/api/subscriptions/admin', {
+        headers: {
+          Accept: "application/json",
+          Authorization: "Bearer " + context.auth.token,
+        },
+      });
+
+      
+      if (response.data && response.data.data ) {
+        setSubscriptions(response.data.data);
+        setUseMockData(false);
+      } else {
+        throw new Error('لا توجد بيانات');
+      }
+    } catch (err) {
+      console.error('Error fetching subscriptions:', err);
+      setError('فشل في تحميل الاشتراكات: ' + (err.response?.data?.message || err.message));
+      setUseMockData(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [context.auth.token]);
+
+  // جلب خطط الاشتراك من API مرة واحدة
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
+
+  // جلب الاشتراكات عند تغيير التبويب فقط
+  useEffect(() => {
+    if (activeTab === 'management') {
+      fetchSubscriptions();
+    }
+  }, [activeTab, fetchSubscriptions]);
 
   const handleRenewSubscription = async (id) => {
-    if (useMockData) {
-      // معالجة وهمية للتجديد
-      setSubscriptions(subscriptions.map(sub => 
-        sub.id === id 
-          ? { ...sub, status: 'active', end_date: '2024-12-31' }
-          : sub
-      ));
-      alert('تم تجديد الاشتراك بنجاح (بيانات تجريبية)');
-      return;
-    }
-    
     try {
       const response = await axios.put(`http://116.203.254.150:8001/api/subscriptions/${id}/renew`, {}, {
         headers: {
           Accept: "application/json",
-          Authorization: "Bearer " + localStorage.getItem('auth_token'),
+          Authorization: "Bearer " + context.auth.token,
         },
       });
       
       if (response.data && response.data.success) {
-        setSubscriptions(subscriptions.map(sub => 
-          sub.id === id 
-            ? { ...sub, status: 'active', end_date: response.data.new_end_date }
-            : sub
-        ));
+        // إعادة تحميل الاشتراكات بعد التجديد
+        fetchSubscriptions();
         alert('تم تجديد الاشتراك بنجاح');
       }
     } catch (err) {
       console.error('Error renewing subscription:', err);
-      alert('فشل في تجديد الاشتراك');
+      alert('فشل في تجديد الاشتراك: ' + (err.response?.data?.message || err.message));
     }
   };
 
   const handleCancelSubscription = async (id) => {
     if (window.confirm('هل أنت متأكد من إلغاء هذا الاشتراك؟')) {
-      if (useMockData) {
-        // معالجة وهمية للإلغاء
-        setSubscriptions(subscriptions.map(sub => 
-          sub.id === id 
-            ? { ...sub, status: 'cancelled' }
-            : sub
-        ));
-        alert('تم إلغاء الاشتراك (بيانات تجريبية)');
-        return;
-      }
-      
       try {
         const response = await axios.put(`http://116.203.254.150:8001/api/subscriptions/${id}/cancel`, {}, {
           headers: {
             Accept: "application/json",
-            Authorization: "Bearer " + localStorage.getItem('auth_token'),
+            Authorization: "Bearer " + context.auth.token,
           },
         });
         
         if (response.data && response.data.success) {
-          setSubscriptions(subscriptions.map(sub => 
-            sub.id === id 
-              ? { ...sub, status: 'cancelled' }
-              : sub
-          ));
+          // إعادة تحميل الاشتراكات بعد الإلغاء
+          fetchSubscriptions();
           alert('تم إلغاء الاشتراك بنجاح');
         }
       } catch (err) {
         console.error('Error canceling subscription:', err);
-        alert('فشل في إلغاء الاشتراك');
+        alert('فشل في إلغاء الاشتراك: ' + (err.response?.data?.message || err.message));
       }
     }
   };
 
   const handleDeleteSubscription = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الاشتراك؟')) {
-      if (useMockData) {
-        // معالجة وهمية للحذف
-        setSubscriptions(subscriptions.filter(sub => sub.id !== id));
-        alert('تم حذف الاشتراك (بيانات تجريبية)');
-        return;
-      }
-      
       try {
         const response = await axios.delete(`http://116.203.254.150:8001/api/subscriptions/${id}`, {
           headers: {
             Accept: "application/json",
-            Authorization: "Bearer " + localStorage.getItem('auth_token'),
+            Authorization: "Bearer " + context.auth.token,
           },
         });
         
         if (response.data && response.data.success) {
-          setSubscriptions(subscriptions.filter(sub => sub.id !== id));
+          // إعادة تحميل الاشتراكات بعد الحذف
+          fetchSubscriptions();
           alert('تم حذف الاشتراك بنجاح');
         }
       } catch (err) {
         console.error('Error deleting subscription:', err);
-        alert('فشل في حذف الاشتراك');
+        alert('فشل في حذف الاشتراك: ' + (err.response?.data?.message || err.message));
       }
     }
   };
 
   const handleSubscribe = async (planId) => {
-    if (useMockData) {
-      // معالجة وهمية للاشتراك
-      const newSubscription = {
-        id: Date.now(),
-        user: { name: 'مستخدم جديد' },
-        plan: mockPlans.find(p => p.id === planId),
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        status: 'active'
-      };
-      
-      setSubscriptions([...subscriptions, newSubscription]);
-      setActiveTab('management');
-      alert('تم الاشتراك في الخطة بنجاح (بيانات تجريبية)');
-      return;
-    }
-    
     try {
       const response = await axios.post(`http://116.203.254.150:8001/api/subscriptions`, {
         plan_id: planId
       }, {
         headers: {
           Accept: "application/json",
-          Authorization: "Bearer " + localStorage.getItem('auth_token'),
+          Authorization: "Bearer " + context.auth.token,
         },
       });
       
       if (response.data && response.data.success) {
         alert('تم الاشتراك في الخطة بنجاح!');
+        // إعادة تحميل الاشتراكات بعد الاشتراك الجديد
+        fetchSubscriptions();
         setActiveTab('management');
       }
     } catch (err) {
       console.error('Error subscribing to plan:', err);
-      alert('فشل في الاشتراك في الخطة');
+      alert('فشل في الاشتراك في الخطة: ' + (err.response?.data?.message || err.message));
     }
   };
 
   const handleDeletePlan = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذه الخطة؟ سيؤثر هذا على جميع المشتركين فيها.')) {
-      if (useMockData) {
-        // معالجة وهمية لحذف الخطة
-        setPlans(plans.filter(plan => plan.id !== id));
-        alert('تم حذف الخطة (بيانات تجريبية)');
-        setDeleteConfirm(null);
-        return;
-      }
-      
       try {
         const response = await axios.delete(`http://116.203.254.150:8001/api/plans/${id}`, {
           headers: {
             Accept: "application/json",
-            Authorization: "Bearer " + localStorage.getItem('auth_token'),
+            Authorization: "Bearer " + context.auth.token,
           },
         });
         
         if (response.data && response.data.success) {
-          setPlans(plans.filter(plan => plan.id !== id));
+          // إعادة تحميل الخطط بعد الحذف
+          fetchPlans();
           alert('تم حذف الخطة بنجاح');
           setDeleteConfirm(null);
         }
       } catch (err) {
         console.error('Error deleting plan:', err);
-        alert('فشل في حذف الخطة');
+        alert('فشل في حذف الخطة: ' + (err.response?.data?.message || err.message));
       }
     }
   };
@@ -313,40 +205,30 @@ const SubscriptionsManagement = () => {
   const handleTogglePlanStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     
-    if (useMockData) {
-      // معالجة وهمية لتغيير حالة الخطة
-      setPlans(plans.map(plan => 
-        plan.id === id ? { ...plan, status: newStatus } : plan
-      ));
-      alert(`تم ${newStatus === 'active' ? 'تفعيل' : 'إلغاء تفعيل'} الخطة (بيانات تجريبية)`);
-      return;
-    }
-    
     try {
       const response = await axios.put(`http://116.203.254.150:8001/api/plans/${id}/status`, {
         status: newStatus
       }, {
         headers: {
           Accept: "application/json",
-          Authorization: "Bearer " + localStorage.getItem('auth_token'),
+          Authorization: "Bearer " + context.auth.token,
         },
       });
       
       if (response.data && response.data.success) {
-        setPlans(plans.map(plan => 
-          plan.id === id ? { ...plan, status: newStatus } : plan
-        ));
+        // إعادة تحميل الخطط بعد تغيير الحالة
+        fetchPlans();
         alert(`تم ${newStatus === 'active' ? 'تفعيل' : 'إلغاء تفعيل'} الخطة بنجاح`);
       }
     } catch (err) {
       console.error('Error toggling plan status:', err);
-      alert('فشل في تغيير حالة الخطة');
+      alert('فشل في تغيير حالة الخطة: ' + (err.response?.data?.message || err.message));
     }
   };
 
   const filteredSubscriptions = subscriptions.filter(sub => {
-    const matchesSearch = sub.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sub.plan?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = sub.user?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          sub.plan?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || sub.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -370,9 +252,8 @@ const SubscriptionsManagement = () => {
 
   const getPlanIcon = (planType) => {
     const icons = {
-      'basic': 'fas fa-star',
-      'advanced': 'fas fa-crown',
-      'premium': 'fas fa-gem',
+      'monthly': 'fas fa-calendar-alt',
+      'yearly': 'fas fa-calendar-star',
       'free': 'fas fa-user'
     };
     return icons[planType] || 'fas fa-star';
@@ -380,9 +261,8 @@ const SubscriptionsManagement = () => {
 
   const getPlanColor = (planType) => {
     const colors = {
-      'basic': 'text-blue-600',
-      'advanced': 'text-purple-600',
-      'premium': 'text-yellow-600',
+      'monthly': 'text-blue-600',
+      'yearly': 'text-yellow-600',
       'free': 'text-gray-600'
     };
     return colors[planType] || 'text-blue-600';
@@ -395,6 +275,15 @@ const SubscriptionsManagement = () => {
     const diffTime = end - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 0 ? diffDays : 0;
+  };
+
+  const formatFeatures = (features) => {
+    if (Array.isArray(features)) {
+      return features;
+    } else if (typeof features === 'string') {
+      return features.split(',').map(feature => feature.trim()).filter(feature => feature !== '');
+    }
+    return [];
   };
 
   const renderPlansSection = () => (
@@ -436,11 +325,11 @@ const SubscriptionsManagement = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {plans.map(plan => (
               <div key={plan.id} className={`bg-white rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1 
-                ${plan.type === 'premium' ? 'border-yellow-400 ring-2 ring-yellow-200' : 'border-gray-200'}
+                ${plan.type === 'yearly' ? 'border-yellow-400 ring-2 ring-yellow-200' : 'border-gray-200'}
                 ${plan.status === 'inactive' ? 'opacity-70' : ''}`}>
-                <div className={`p-6 rounded-t-xl text-center ${plan.type === 'premium' ? 'bg-yellow-100' : 'bg-gray-50'}`}>
+                <div className={`p-6 rounded-t-xl text-center ${plan.type === 'yearly' ? 'bg-yellow-100' : 'bg-gray-50'}`}>
                   <div className="flex justify-between items-start mb-2">
-                    {getStatusBadge(plan.status)}
+                    {getStatusBadge(plan.status || 'active')}
                     <div className="flex space-x-2 space-x-reverse">
                       <button 
                         onClick={() => navigate(`/plans/edit/${plan.id}`)}
@@ -461,14 +350,14 @@ const SubscriptionsManagement = () => {
                   <i className={`${getPlanIcon(plan.type)} ${getPlanColor(plan.type)} text-4xl mb-4`}></i>
                   <h3 className="text-xl font-bold text-gray-800">{plan.name}</h3>
                   <div className="mt-4">
-                    <span className="text-3xl font-bold text-gray-900">{plan.price} ريال</span>
-                    <span className="text-gray-600"> / {plan.duration}</span>
+                    <span className="text-3xl font-bold text-gray-900">{plan.price} $</span>
+                    <span className="text-gray-600"> / {plan.duration} يوم</span>
                   </div>
                 </div>
                 
                 <div className="p-6">
                   <ul className="space-y-3 mb-4">
-                    {plan.features && plan.features.map((feature, index) => (
+                    {formatFeatures(plan.features).map((feature, index) => (
                       <li key={index} className="flex items-center">
                         <i className="fas fa-check text-green-500 ml-2"></i>
                         <span className="text-gray-700">{feature}</span>
@@ -478,7 +367,7 @@ const SubscriptionsManagement = () => {
                   
                   <div className="flex space-x-2 space-x-reverse">
                     <button 
-                      onClick={() => handleTogglePlanStatus(plan.id, plan.status)}
+                      onClick={() => handleTogglePlanStatus(plan.id, plan.status || 'active')}
                       className={`flex-1 py-2 rounded-lg font-semibold transition duration-300 ${
                         plan.status === 'active' 
                           ? 'bg-gray-500 hover:bg-gray-600 text-white' 
@@ -490,10 +379,8 @@ const SubscriptionsManagement = () => {
                     <button 
                       onClick={() => handleSubscribe(plan.id)}
                       className={`flex-1 py-2 rounded-lg font-semibold transition duration-300
-                        ${plan.type === 'premium' 
+                        ${plan.type === 'yearly' 
                           ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
-                          : plan.type === 'free'
-                          ? 'bg-gray-500 hover:bg-gray-600 text-white'
                           : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
                       disabled={plan.status === 'inactive'}
                     >
@@ -616,7 +503,7 @@ const SubscriptionsManagement = () => {
             <div>
               <p className="text-sm text-purple-600">إجمالي الإيرادات</p>
               <p className="text-2xl font-bold text-purple-800">
-                {subscriptions.reduce((sum, s) => sum + (s.plan?.price || 0), 0).toLocaleString()} ريال
+                {subscriptions.reduce((sum, s) => sum + (parseFloat(s.plan?.price) || 0), 0).toLocaleString()} $
               </p>
             </div>
             <i className="fas fa-dollar-sign text-purple-600 text-2xl"></i>
@@ -671,10 +558,19 @@ const SubscriptionsManagement = () => {
                 <tr key={subscription.id} className="hover:bg-gray-50 transition duration-200">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center ml-3">
-                        <i className="fas fa-user text-blue-600 text-sm"></i>
-                      </div>
-                      <span className="text-sm font-medium text-gray-900">{subscription.user?.name || 'مستخدم'}</span>
+                      {subscription.user.profile?.image_url && 
+                        <img 
+                          src={subscription.user.profile?.image_url ?? "/default-avatar.png"} 
+                          alt="Profile" 
+                          className="w-12 h-12 rounded-full object-cover ml-3"
+                        /> 
+                        ||
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center ml-3">
+                        <i className="fas fa-user text-gray-600 text-sm"></i>
+                        </div>}
+                        <span className="text-sm font-medium text-gray-500">
+                          {subscription.user.first_name ||''}{ subscription.user.first_name||''}
+                        </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -684,7 +580,7 @@ const SubscriptionsManagement = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {subscription.plan?.price ? subscription.plan.price.toLocaleString() + ' ريال' : 'غير معروف'}
+                    {subscription.plan?.price ? parseFloat(subscription.plan.price).toLocaleString() + ' $' : 'غير معروف'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{subscription.start_date || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{subscription.end_date || '-'}</td>

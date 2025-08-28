@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AD_TYPES } from '../../utils/constants';
 import axios from 'axios';
@@ -33,76 +33,78 @@ const AdEdit = () => {
   const [showPropertySelector, setShowPropertySelector] = useState(false);
   const [propertySearch, setPropertySearch] = useState('');
 
-  // جلب العقارات من API
-  useEffect(() => {
-    const fetchProperties = async () => {
-      setPropertiesLoading(true);
-      try {
-        const response = await axios.get('http://116.203.254.150:8001/api/property/getProperty/4', {
-          headers: {
-            Accept: "application/json",
-            Authorization: "Bearer " + context.auth.token,
-          },
-        });
-        
-        if (response && response.data) {
-          // التأكد من أن البيانات مصفوفة
-          const propertiesData = Array.isArray(response.data.data) 
-            ? response.data.data 
-            : [response.data.data];
-          setProperties(propertiesData);
-        }
-      } catch (error) {
-        console.error('Error fetching properties:', error);
-      } finally {
-        setPropertiesLoading(false);
+  // دالة جلب العقارات مع useCallback
+  const fetchProperties = useCallback(async () => {
+    setPropertiesLoading(true);
+    try {
+      const response = await axios.get('http://116.203.254.150:8001/api/property/getProperty/4', {
+        headers: {
+          Accept: "application/json",
+          Authorization: "Bearer " + context.auth.token,
+        },
+      });
+      
+      if (response && response.data) {
+        // التأكد من أن البيانات مصفوفة
+        const propertiesData = Array.isArray(response.data.data) 
+          ? response.data.data 
+          : [response.data.data];
+        setProperties(propertiesData);
       }
-    };
-
-    fetchProperties();
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+    } finally {
+      setPropertiesLoading(false);
+    }
   }, [context.auth.token]);
 
+  // جلب العقارات مرة واحدة فقط
+  useEffect(() => {
+    fetchProperties();
+  }, [fetchProperties]);
+
+  // دالة جلب بيانات الإعلان مع useCallback
+  const fetchAdData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(`http://116.203.254.150:8001/api/ad/show/${id}`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: "Bearer " + context.auth.token,
+        },
+      });
+      
+      if (response.data && response.data.data) {
+        const adData = response.data.data;
+        setFormData({
+          title: adData.property?.name || '',
+          description: adData.property?.description || '',
+          type: 'بانر', // يمكن تعديله حسب نوع الإعلان الفعلي
+          client: 'عميل', // يمكن تعديله حسب البيانات الفعلية
+          startDate: adData.start_date?.split('T')[0] || '',
+          endDate: adData.end_date?.split('T')[0] || '',
+          budget: '5000', // يمكن تعديله حسب البيانات الفعلية
+          targetAudience: 'الباحثين عن عقارات',
+          keywords: 'عقارات',
+          imageUrl: adData.property?.images?.[0]?.image_url || '',
+          linkUrl: `https://example.com/properties/${adData.property_id}`,
+          status: adData.is_active ? 'active' : 'paused',
+          propertyId: adData.property_id?.toString() || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching ad data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, context.auth.token]);
+
+  // جلب بيانات الإعلان للتعديل مرة واحدة فقط
   useEffect(() => {
     if (isEditing) {
-      // جلب بيانات الإعلان للتعديل
-      const fetchAdData = async () => {
-        setIsLoading(true);
-        try {
-          const response = await axios.get(`http://116.203.254.150:8001/api/ad/show/${id}`, {
-            headers: {
-              Accept: "application/json",
-              Authorization: "Bearer " + context.auth.token,
-            },
-          });
-          
-          if (response.data && response.data.data) {
-            const adData = response.data.data;
-            setFormData({
-              title: adData.property?.name || '',
-              description: adData.property?.description || '',
-              type: 'بانر', // يمكن تعديله حسب نوع الإعلان الفعلي
-              client: 'عميل', // يمكن تعديله حسب البيانات الفعلية
-              startDate: adData.start_date?.split('T')[0] || '',
-              endDate: adData.end_date?.split('T')[0] || '',
-              budget: '5000', // يمكن تعديله حسب البيانات الفعلية
-              targetAudience: 'الباحثين عن عقارات',
-              keywords: 'عقارات',
-              imageUrl: adData.property?.images?.[0]?.image_url || '',
-              linkUrl: `https://example.com/properties/${adData.property_id}`,
-              status: adData.is_active ? 'active' : 'paused',
-              propertyId: adData.property_id?.toString() || ''
-            });
-          }
-        } catch (error) {
-          console.error('Error fetching ad data:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
       fetchAdData();
     }
-  }, [isEditing, id, context.auth.token]);
+  }, [isEditing, fetchAdData]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -230,7 +232,7 @@ const AdEdit = () => {
   );
 
   const formatPrice = (price) => {
-    return `${price?.toLocaleString('ar-EG') || '0'} ريال`;
+    return `${price?.toLocaleString('ar-EG') || '0'} $`;
   };
 
   const getPropertyTypeText = (type) => {
@@ -468,7 +470,7 @@ const AdEdit = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الميزانية (ريال) *
+                  الميزانية ($) *
                 </label>
                 <input
                   type="number"

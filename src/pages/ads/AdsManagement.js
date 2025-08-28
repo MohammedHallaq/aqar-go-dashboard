@@ -1,4 +1,4 @@
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useContext, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStatusBadgeClasses } from '../../utils/helpers';
 import axios from 'axios';
@@ -7,7 +7,6 @@ import { User } from '../../Contexts/Context';
 const AdsManagement = () => {
   const navigate = useNavigate();
   const context = useContext(User);
-  const [runAd, setRunAd] = useState(0);
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,106 +17,34 @@ const AdsManagement = () => {
     total: 0
   });
   
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    
-    axios.get('http://116.203.254.150:8001/api/ad/index', {
-      headers: {
-        Accept: "application/json",
-        Authorization: "Bearer " + context.auth.token,
-      },
-    }).then((response) => {
-      if (response.data && response.data.data) {
-        // البيانات الآن تأتي مع pagination
-        const adsData = response.data.data.data; // array of ads
-        const paginationData = response.data.data;
-        
-        setAds(adsData || []);
-        setPagination({
-          current_page: paginationData.current_page || 1,
-          last_page: paginationData.last_page || 1,
-          per_page: paginationData.per_page || 10,
-          total: paginationData.total || 0
-        });
-      } else {
-        setAds([]);
-      }
-      setLoading(false);
-    }).catch((error) => {
-      console.error('Error fetching ads:', error);
-      setError('فشل في تحميل الإعلانات');
-      setLoading(false);
-      setAds([]);
-    });
-  }, [runAd, context.auth.token]);
-
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedAd, setSelectedAd] = useState(null);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
 
-  const handleDeleteAd = (id) => {
-    if (window.confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
-      axios.delete(`http://116.203.254.150:8001/api/ad/delete/${id}`, {
+  // Debounce effect للبحث
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // دالة جلب البيانات مع useCallback
+  const fetchAds = useCallback(async (page = 1) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.get(`http://116.203.254.150:8001/api/ad/index?page=${page}`, {
         headers: {
+          Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
         },
-      }).then(() => {
-        setAds(prevAds => prevAds.filter(ad => ad.id !== id));
-        setRunAd(prev => prev + 1);
-      }).catch((error) => {
-        console.error('Error deleting ad:', error);
-        alert('فشل في حذف الإعلان');
       });
-    }
-  };
 
-  const toggleAdStatus = (id) => {
-  const ad = ads.find(ad => ad.id === id);
-  if (!ad) return;
-  
-  const newStatus = !ad.is_active;
-  const endpoint = newStatus 
-    ? `http://116.203.254.150:8001/api/ad/activate/${id}`
-    : `http://116.203.254.150:8001/api/ad/unactivate/${id}`;
-  
-  axios.get(endpoint, {
-    headers: {
-      Authorization: "Bearer " + context.auth.token,
-    },
-  }).then(() => {
-    setAds(prevAds => prevAds.map(ad => 
-      ad.id === id ? { ...ad, is_active: newStatus } : ad
-    ));
-    setRunAd(prev => prev + 1);
-    
-    // إظهار رسالة نجاح
-    alert(newStatus ? 'تم تفعيل الإعلان بنجاح' : 'تم إيقاف الإعلان بنجاح');
-  }).catch((error) => {
-    console.error('Error updating ad status:', error);
-    alert('فشل في تحديث حالة الإعلان');
-  });
-};
-
-  const viewPropertyDetails = (ad) => {
-    setSelectedAd(ad);
-    setShowPropertyModal(true);
-  };
-
-  const closePropertyModal = () => {
-    setShowPropertyModal(false);
-    setSelectedAd(null);
-  };
-
-  const loadPage = (page) => {
-    setLoading(true);
-    axios.get(`http://116.203.254.150:8001/api/ad/index?page=${page}`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: "Bearer " + context.auth.token,
-      },
-    }).then((response) => {
       if (response.data && response.data.data) {
         const adsData = response.data.data.data;
         const paginationData = response.data.data;
@@ -130,12 +57,108 @@ const AdsManagement = () => {
           total: paginationData.total || 0
         });
       }
-      setLoading(false);
-    }).catch((error) => {
+    } catch (error) {
       console.error('Error fetching ads:', error);
       setError('فشل في تحميل الإعلانات');
+      setAds([]);
+    } finally {
       setLoading(false);
-    });
+    }
+  }, [context.auth.token]);
+
+  // التحميل الأولي
+  useEffect(() => {
+    fetchAds(1);
+  }, [fetchAds]);
+
+  const handleDeleteAd = async (id) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
+      try {
+        await axios.delete(`http://116.203.254.150:8001/api/ad/delete/${id}`, {
+          headers: {
+            Authorization: "Bearer " + context.auth.token,
+          },
+        });
+        
+        // تحديث محلي بدون إعادة جلب البيانات
+        setAds(prevAds => prevAds.filter(ad => ad.id !== id));
+        setPagination(prev => ({ ...prev, total: prev.total - 1 }));
+        
+      } catch (error) {
+        console.error('Error deleting ad:', error);
+        alert('فشل في حذف الإعلان');
+      }
+    }
+  };
+
+  const toggleAdStatus = async (id) => {
+    const ad = ads.find(ad => ad.id === id);
+    if (!ad) return;
+    
+    const newStatus = !ad.is_active;
+    
+    try {
+      const endpoint = newStatus 
+        ? `http://116.203.254.150:8001/api/ad/activate/${id}`
+        : `http://116.203.254.150:8001/api/ad/unactivate/${id}`;
+      
+      await axios.get(endpoint, {
+        headers: {
+          Authorization: "Bearer " + context.auth.token,
+        },
+      });
+      
+      // تحديث محلي بدون إعادة جلب البيانات
+      setAds(prevAds => prevAds.map(ad => 
+        ad.id === id ? { ...ad, is_active: newStatus } : ad
+      ));
+      
+      alert(newStatus ? 'تم تفعيل الإعلان بنجاح' : 'تم إيقاف الإعلان بنجاح');
+    } catch (error) {
+      console.error('Error updating ad status:', error);
+      alert('فشل في تحديث حالة الإعلان');
+    }
+  };
+
+  const viewPropertyDetails = (ad) => {
+    setSelectedAd(ad);
+    setShowPropertyModal(true);
+  };
+  const handleOpenWhatsApp = (phone) => {
+    if (!phone) {
+      alert("رقم الهاتف غير متوفر");
+      return;
+    }
+
+    let formattedNumber = phone.toString().replace(/\D/g, "");
+    if (formattedNumber.startsWith("0")) {
+      formattedNumber = "963" + formattedNumber.substring(1); // مثال: سوريا
+    }
+
+    const url = `https://wa.me/${formattedNumber}`;
+    window.open(url, "_blank");
+  };
+
+  // الاتصال المباشر
+  const handleCall = (phone) => {
+    if (!phone) {
+      alert("رقم الهاتف غير متوفر");
+      return;
+    }
+    let formattedNumber = phone.toString().replace(/\D/g, "");
+    if (formattedNumber.startsWith("0")) {
+      formattedNumber = "963" + formattedNumber.substring(1); // مثال: سوريا
+    }
+    window.location.href = `tel:${formattedNumber}`;
+  };
+
+  const closePropertyModal = () => {
+    setShowPropertyModal(false);
+    setSelectedAd(null);
+  };
+
+  const loadPage = (page) => {
+    fetchAds(page);
   };
 
   // الدوال المساعدة لأنواع العقارات
@@ -203,6 +226,7 @@ const AdsManagement = () => {
     };
     return icons[type] || 'fas fa-home';
   };
+
   const renderPropertyPreview = (ad) => {
     if (!ad.property) return null;
 
@@ -235,7 +259,7 @@ const AdsManagement = () => {
               <i className={`${getPropertyTypeIcon(ad.property.type)} text-blue-600 ml-2`}></i>
               <span className="text-sm font-medium text-gray-900">{ad.property.name || 'بدون عنوان'}</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">{ad.property.address || 'بدون عنوان'}</p>
+            <p className="text-xs text-gray-500 mt-1">{ad.id || 'بدون عنوان'}</p>
             <div className="flex items-center justify-between mt-2">
               <span className="text-sm font-bold text-orange-600">{formatPrice(ad.property.price)}</span>
               <span className="text-xs text-gray-500">{ad.property.area || '0'} م²</span>
@@ -262,7 +286,6 @@ const AdsManagement = () => {
                 <p className="text-sm font-medium text-gray-900">
                   {ad.property.user.first_name || ''} {ad.property.user.last_name || ''}
                 </p>
-                <p className="text-xs text-gray-500">{ad.property.user.email || ''}</p>
                 <p className="text-xs text-gray-500">{ad.property.user.phone_number || ''}</p>
               </div>
             </div>
@@ -271,6 +294,7 @@ const AdsManagement = () => {
       </div>
     );
   };
+
   // عرض الخصائص الخاصة بكل نوع عقار
   const renderPropertySpecificDetails = (property) => {
     if (!property || !property.propertyable) return null;
@@ -407,8 +431,8 @@ const AdsManagement = () => {
     if (!ad || !ad.property) return false;
     
     const matchesSearch = 
-      (ad.property?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (ad.property?.address?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+      (ad.property?.name?.toLowerCase() || '').includes(debouncedSearchTerm.toLowerCase()) ||
+      (String(ad.id).includes(searchTerm)|| '');
     
     const matchesFilter = filterStatus === 'all' || 
                          (filterStatus === 'active' && ad.is_active) ||
@@ -446,7 +470,7 @@ const AdsManagement = () => {
   };
 
   const formatPrice = (price) => {
-    return `${price?.toLocaleString('ar-EG') || '0'} ريال`;
+    return `${price?.toLocaleString('ar-EG') || '0'} $`;
   };
 
   const renderAdImage = (ad) => {
@@ -478,26 +502,15 @@ const AdsManagement = () => {
 
   const renderAdPerformance = (ad) => {
     return (
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      //<div className="grid grid-cols-2 gap-4 mb-4">
         <div className="text-center">
           <div className="text-2xl font-bold text-blue-600">{formatNumber(ad.views || 0)}</div>
           <div className="text-xs text-gray-500">مشاهدة</div>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-green-600">{formatNumber(ad.clicks || 0)}</div>
-          <div className="text-xs text-gray-500">نقرة</div>
-        </div>
-        <div className="text-center col-span-2">
-          <div className="text-lg font-bold text-purple-600">
-            {ad.views > 0 ? (((ad.clicks || 0) / ad.views) * 100).toFixed(2) : '0.00'}%
-          </div>
-          <div className="text-xs text-gray-500">معدل النقر</div>
-        </div>
-      </div>
+      //</div>
     );
   };
 
-  
 
   const renderPagination = () => {
     if (pagination.last_page <= 1) return null;
@@ -561,7 +574,7 @@ const AdsManagement = () => {
           <i className="fas fa-exclamation-triangle text-4xl text-red-600 mb-4"></i>
           <p className="text-red-600 mb-4">{error}</p>
           <button 
-            onClick={() => setRunAd(prev => prev + 1)}
+            onClick={() => fetchAds(1)}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
             إعادة المحاولة
@@ -570,6 +583,7 @@ const AdsManagement = () => {
       </div>
     );
   }
+  
 
   return (
     <div className="p-6 fade-in">
@@ -622,18 +636,6 @@ const AdsManagement = () => {
             <i className="fas fa-eye text-purple-600 text-2xl"></i>
           </div>
         </div>
-        
-        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-orange-600">إجمالي النقرات</p>
-              <p className="text-2xl font-bold text-orange-800">
-                {ads.reduce((sum, ad) => sum + (ad.clicks || 0), 0).toLocaleString()}
-              </p>
-            </div>
-            <i className="fas fa-mouse-pointer text-orange-600 text-2xl"></i>
-          </div>
-        </div>
       </div>
 
       {/* Search and Filter */}
@@ -672,7 +674,7 @@ const AdsManagement = () => {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800">{ad.property?.name || 'إعلان بدون عنوان'}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{ad.property?.address || 'بدون عنوان'}</p>
+                  <p className="text-sm text-gray-500 mt-1">{ad.id || 'بدون عنوان'}</p>
                 </div>
                 {getStatusBadge(ad.is_active)}
               </div>
@@ -686,10 +688,9 @@ const AdsManagement = () => {
                   <i className="fas fa-calendar-check ml-1"></i>
                   <span>إلى: {formatDate(ad.end_date)}</span>
                 </div>
-                
                 {renderAdPerformance(ad)}
               </div>
-
+              
               {/* Property Preview مع معلومات المعلن */}
               {renderPropertyPreview(ad)}
 
@@ -789,7 +790,7 @@ const AdsManagement = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <div>
                   <h4 className="text-lg font-semibold text-gray-800 mb-2">{selectedAd.property.name || 'بدون عنوان'}</h4>
-                  <p className="text-gray-600 mb-4">{selectedAd.property.address || 'بدون عنوان'}</p>
+                  <p className="text-gray-600 mb-4">{selectedAd.id || 'بدون عنوان'}</p>
                   
                   <div className="flex items-center text-sm text-gray-600 mb-2">
                     <i className={`${getPropertyTypeIcon(selectedAd.property.type)} ml-2`}></i>
@@ -850,9 +851,16 @@ const AdsManagement = () => {
                 إغلاق
               </button>
               <button 
+              onClick={() => handleOpenWhatsApp(selectedAd.property.user.phone_number)}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 التواصل مع المالك
+              </button>
+              <button 
+              onClick={() => handleCall(selectedAd.property.user.phone_number)}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                اتصال مباشر
               </button>
             </div>
           </div>

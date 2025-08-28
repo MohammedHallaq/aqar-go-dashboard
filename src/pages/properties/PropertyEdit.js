@@ -511,7 +511,7 @@ const PropertyEdit = () => {
               {/* Price */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  السعر (ريال) *
+                  السعر ($) *
                 </label>
                 <input
                   type="number"

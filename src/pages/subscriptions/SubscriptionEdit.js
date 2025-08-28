@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { User } from '../../Contexts/Context';
 
 const SubscriptionEdit = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditing = Boolean(id);
-
+  const context = useContext(User);
   const [formData, setFormData] = useState({
     user_id: '',
     plan_id: '',
-    start_date: '',
+    start_date: new Date().toISOString().split('T')[0],
     end_date: '',
     price: '',
     status: 'active',
@@ -21,126 +22,157 @@ const SubscriptionEdit = () => {
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [users, setUsers] = useState([]);
+  const [email, setEmail] = useState('');
+  const [user, setUser] = useState(null);
   const [plans, setPlans] = useState([]);
-  const [useMockData, setUseMockData] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [emailValidation, setEmailValidation] = useState({ loading: false, valid: false });
 
-  // بيانات وهمية للمستخدمين
-  const mockUsers = [
-    { id: 1, name: 'أحمد محمد', email: 'ahmed@example.com' },
-    { id: 2, name: 'فاطمة علي', email: 'fatima@example.com' },
-    { id: 3, name: 'سارة أحمد', email: 'sara@example.com' }
-  ];
+  // دالة جلب الخطط مع useCallback
+  const fetchPlans = useCallback(async () => {
+    try {
+      const response = await axios.get('http://116.203.254.150:8001/api/plans', {
+        headers: {
+          Accept: "application/json",
+          Authorization: "Bearer " + context.auth.token,
+        },
+      });
+      
+      if (response.data && response.data.data) {
+        setPlans(response.data.data);
+      } else {
+        throw new Error('لا توجد بيانات للخطط');
+      }
+    } catch (err) {
+      console.error('Error fetching plans:', err);
+      alert('فشل في تحميل قائمة الخطط: ' + (err.response?.data?.message || err.message));
+    }
+  }, [context.auth.token]);
 
-  // بيانات وهمية للخطط
-  const mockPlans = [
-    { id: 1, name: 'المجانية', price: 0, type: 'free', duration: 'شهري', features: ['3 إعلانات كحد أقصى', 'وصول إعلاني عادي', 'خدمة دعم أساسية'] },
-    { id: 2, name: 'المميزة', price: 4.99, type: 'premium', duration: 'شهري', features: ['النشر حتى 15 إعلان', 'وصول إعلاني مميز', 'دعم مميز على مدار الساعة'] },
-    { id: 3, name: 'المحترفة', price: 9.99, type: 'premium', duration: 'شهري', features: ['عدد غير محدود من الإعلانات', 'أولوية في النتائج', 'دعم فني متقدم'] }
-  ];
+  // دالة جلب بيانات الاشتراك مع useCallback
+  const fetchSubscription = useCallback(async () => {
+    try {
+      const response = await axios.get(`http://116.203.254.150:8001/api/subscriptions/${id}`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: "Bearer " + context.auth.token,
+        },
+      });
+      
+      if (response.data && response.data.data) {
+        const subscriptionData = response.data.data;
+        setFormData({
+          user_id: subscriptionData.user_id || subscriptionData.user?.id || '',
+          plan_id: subscriptionData.plan_id || subscriptionData.plan?.id || '',
+          start_date: subscriptionData.start_date || new Date().toISOString().split('T')[0],
+          end_date: subscriptionData.end_date || '',
+          price: subscriptionData.price || '',
+          status: subscriptionData.status || 'active',
+          auto_renew: subscriptionData.auto_renew || false,
+          payment_method: subscriptionData.payment_method || 'credit_card',
+          notes: subscriptionData.notes || ''
+        });
+        
+        // تعيين البريد الإلكتروني إذا كان موجوداً
+        if (subscriptionData.user?.email) {
+          setEmail(subscriptionData.user.email);
+          setUser(subscriptionData.user);
+          setEmailValidation({ loading: false, valid: true });
+        }
+      } else {
+        throw new Error('لا توجد بيانات للاشتراك');
+      }
+    } catch (err) {
+      console.error('Error fetching subscription:', err);
+      alert('فشل في تحميل بيانات الاشتراك: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setLoadingData(false);
+    }
+  }, [id, context.auth.token]);
 
-  // بيانات وهمية للاشتراك
-  const mockSubscription = {
-    id: 1,
-    user_id: '1',
-    plan_id: '2',
-    start_date: '2024-01-01',
-    end_date: '2024-12-31',
-    price: '4.99',
-    status: 'active',
-    auto_renew: true,
-    payment_method: 'credit_card',
-    notes: 'اشتراك مميز للعميل'
+  // دالة للتحقق من البريد الإلكتروني والحصول على user_id
+  const validateEmailAndGetUser = async (email) => {
+    if (!email) {
+      setEmailValidation({ loading: false, valid: false });
+      setUser(null);
+      setFormData(prev => ({ ...prev, user_id: '' }));
+      return;
+    }
+
+    // تحقق من صيغة البريد الإلكتروني
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrors(prev => ({ ...prev, email: 'صيغة البريد الإلكتروني غير صحيحة' }));
+      setEmailValidation({ loading: false, valid: false });
+      setUser(null);
+      setFormData(prev => ({ ...prev, user_id: '' }));
+      return;
+    }
+
+    setEmailValidation({ loading: true, valid: false });
+    
+    try {
+      const response = await axios.post('http://116.203.254.150:8001/api/user/getUserByEmail', {email:email},{
+        headers: {
+          Accept: "application/json",
+          Authorization: "Bearer " + context.auth.token,
+        },
+      });
+
+      if (response) {
+        const userData = response.data;
+        setUser(userData);
+        setFormData(prev => ({ ...prev, user_id: userData.id }));
+        setEmailValidation({ loading: false, valid: true });
+        setErrors(prev => ({ ...prev, email: '' }));
+      } else {
+        throw new Error('المستخدم غير موجود');
+      }
+    } catch (err) {
+      console.error('Error validating email:', err);
+      setEmailValidation({ loading: false, valid: false });
+      setUser(null);
+      setFormData(prev => ({ ...prev, user_id: '' }));
+      
+      if (err.response?.status === 404) {
+        setErrors(prev => ({ ...prev, email: 'المستخدم غير موجود' }));
+      } else {
+        setErrors(prev => ({ ...prev, email: 'فشل في التحقق من البريد الإلكتروني' }));
+      }
+    }
   };
 
-  // جلب المستخدمين من API
+  // جلب البيانات عند تحميل المكون
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await axios.get('http://116.203.254.150:8001/api/users', {
-          headers: {
-            Accept: "application/json",
-            Authorization: "Bearer " + localStorage.getItem('auth_token'),
-          },
-        });
-        
-        if (response.data && response.data.data) {
-          setUsers(response.data.data);
-          setUseMockData(false);
-        } else {
-          throw new Error('لا توجد بيانات');
-        }
-      } catch (err) {
-        console.error('Error fetching users:', err);
-        setUsers(mockUsers);
-        setUseMockData(true);
+    const loadData = async () => {
+      setLoadingData(true);
+      await fetchPlans();
+      if (isEditing) {
+        await fetchSubscription();
+      } else {
+        setLoadingData(false);
       }
     };
+    
+    loadData();
+  }, [isEditing, fetchPlans, fetchSubscription]);
 
-    fetchUsers();
-  }, []);
-
-  // جلب الخطط من API
+  // التحقق من البريد الإلكتروني عند تغييره
   useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        const response = await axios.get('http://116.203.254.150:8001/api/plans', {
-          headers: {
-            Accept: "application/json",
-            Authorization: "Bearer " + localStorage.getItem('auth_token'),
-          },
-        });
-        
-        if (response.data && response.data.data) {
-          setPlans(response.data.data);
-          setUseMockData(false);
-        } else {
-          throw new Error('لا توجد بيانات');
-        }
-      } catch (err) {
-        console.error('Error fetching plans:', err);
-        setPlans(mockPlans);
-        setUseMockData(true);
-      }
-    };
+    const timer = setTimeout(() => {
+      validateEmailAndGetUser(email);
+    }, 800);
 
-    fetchPlans();
-  }, []);
-
-  // جلب بيانات الاشتراك في حالة التعديل
-  useEffect(() => {
-    if (isEditing) {
-      const fetchSubscription = async () => {
-        try {
-          const response = await axios.get(`http://116.203.254.150:8001/api/subscriptions/${id}`, {
-            headers: {
-              Accept: "application/json",
-              Authorization: "Bearer " + localStorage.getItem('auth_token'),
-            },
-          });
-          
-          if (response.data && response.data.data) {
-            setFormData(response.data.data);
-            setUseMockData(false);
-          } else {
-            throw new Error('لا توجد بيانات');
-          }
-        } catch (err) {
-          console.error('Error fetching subscription:', err);
-          setFormData(mockSubscription);
-          setUseMockData(true);
-        }
-      };
-
-      fetchSubscription();
-    }
-  }, [id, isEditing]);
+    return () => clearTimeout(timer);
+  }, [email]);
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.user_id) {
-      newErrors.user_id = 'المستخدم مطلوب';
+    if (!email) {
+      newErrors.email = 'البريد الإلكتروني مطلوب';
+    } else if (!emailValidation.valid) {
+      newErrors.email = 'يجب التحقق من صحة البريد الإلكتروني';
     }
 
     if (!formData.plan_id) {
@@ -160,7 +192,7 @@ const SubscriptionEdit = () => {
     if (!formData.price) {
       newErrors.price = 'السعر مطلوب';
     } else if (isNaN(formData.price) || parseFloat(formData.price) < 0) {
-      newErrors.price = 'السعر يجب أن يكون رقم صحيح';
+      newErrors.price = 'السعر يجب أن يكون رقم صحيح موجب';
     }
 
     setErrors(newErrors);
@@ -177,23 +209,24 @@ const SubscriptionEdit = () => {
     setIsLoading(true);
 
     try {
-      if (useMockData) {
-        // معالجة وهمية للحفظ
-        setTimeout(() => {
-          console.log('Saving subscription (mock):', formData);
-          setIsLoading(false);
-          alert('تم حفظ الاشتراك بنجاح (بيانات تجريبية)');
-          navigate('/subscriptions');
-        }, 1000);
-        return;
-      }
+      const submissionData = {
+        user_id: formData.user_id,
+        plan_id: formData.plan_id,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        price: parseFloat(formData.price),
+        status: formData.status,
+        auto_renew: formData.auto_renew,
+        payment_method: formData.payment_method,
+        notes: formData.notes
+      };
 
       if (isEditing) {
         // تحديث الاشتراك الموجود
-        const response = await axios.put(`http://116.203.254.150:8001/api/subscriptions/${id}`, formData, {
+        const response = await axios.put(`http://116.203.254.150:8001/api/subscriptions/${id}`, submissionData, {
           headers: {
             Accept: "application/json",
-            Authorization: "Bearer " + localStorage.getItem('auth_token'),
+            Authorization: "Bearer " + context.auth.token,
           },
         });
         
@@ -203,10 +236,10 @@ const SubscriptionEdit = () => {
         }
       } else {
         // إنشاء اشتراك جديد
-        const response = await axios.post('http://116.203.254.150:8001/api/subscriptions', formData, {
+        const response = await axios.post('http://116.203.254.150:8001/api/subscriptions/client', submissionData, {
           headers: {
             Accept: "application/json",
-            Authorization: "Bearer " + localStorage.getItem('auth_token'),
+            Authorization: "Bearer " + context.auth.token,
           },
         });
         
@@ -217,7 +250,23 @@ const SubscriptionEdit = () => {
       }
     } catch (err) {
       console.error('Error saving subscription:', err);
-      alert('فشل في حفظ الاشتراك');
+      if (err.response?.data?.data) {
+        // عرض أخطاء التحقق من الصحة من الخادم
+        const serverErrors = err.response.data.data;
+        const formattedErrors = {};
+        
+        Object.keys(serverErrors).forEach(key => {
+          if (Array.isArray(serverErrors[key])) {
+            formattedErrors[key] = serverErrors[key][0];
+          } else {
+            formattedErrors[key] = serverErrors[key];
+          }
+        });
+        
+        setErrors(formattedErrors);
+      } else {
+        alert('فشل في حفظ الاشتراك: ' + (err.response?.data?.message || err.message));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -243,19 +292,66 @@ const SubscriptionEdit = () => {
     const selectedPlan = plans.find(plan => plan.id == selectedPlanId);
     
     if (selectedPlan) {
+      // حساب تاريخ الانتهاء بناءً على مدة الخطة
+      const startDate = formData.start_date ? new Date(formData.start_date) : new Date();
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + (selectedPlan.duration || 30));
+      
       setFormData(prev => ({
         ...prev,
         plan_id: selectedPlanId,
-        price: selectedPlan.price || ''
+        price: selectedPlan.price || '',
+        end_date: endDate.toISOString().split('T')[0]
       }));
+    }
+  };
+
+  const handleStartDateChange = (e) => {
+    const newStartDate = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      start_date: newStartDate
+    }));
+    
+    // إذا كانت هناك خطة محددة، تحديث تاريخ الانتهاء تلقائياً
+    if (formData.plan_id) {
+      const selectedPlan = plans.find(plan => plan.id == formData.plan_id);
+      if (selectedPlan && newStartDate) {
+        const startDate = new Date(newStartDate);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + (selectedPlan.duration || 30));
+        
+        setFormData(prev => ({
+          ...prev,
+          end_date: endDate.toISOString().split('T')[0]
+        }));
+      }
     }
   };
 
   // الحصول على ميزات الخطة المحددة
   const getSelectedPlanFeatures = () => {
     const selectedPlan = plans.find(plan => plan.id == formData.plan_id);
-    return selectedPlan ? selectedPlan.features : [];
+    if (!selectedPlan) return [];
+    
+    if (Array.isArray(selectedPlan.features)) {
+      return selectedPlan.features;
+    } else if (typeof selectedPlan.features === 'string') {
+      return selectedPlan.features.split(',').map(feature => feature.trim()).filter(feature => feature !== '');
+    }
+    return [];
   };
+
+  if (loadingData) {
+    return (
+      <div className="p-6 flex items-center justify-center h-64">
+        <div className="text-center">
+          <i className="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+          <p className="text-gray-600">جاري تحميل البيانات...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 fade-in">
@@ -274,13 +370,6 @@ const SubscriptionEdit = () => {
         <p className="text-gray-600">
           {isEditing ? 'تعديل بيانات الاشتراك' : 'إضافة اشتراك جديد للمستخدم'}
         </p>
-        
-        {useMockData && (
-          <div className="bg-yellow-50 p-3 rounded-lg text-yellow-700 mt-4 border border-yellow-200">
-            <i className="fas fa-exclamation-triangle ml-2"></i>
-            يتم استخدام بيانات تجريبية لعرض الصفحة
-          </div>
-        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -289,32 +378,39 @@ const SubscriptionEdit = () => {
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">المعلومات الأساسية</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* User Selection */}
+              {/* User Email Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  المستخدم *
+                  إيميل المستخدم *
                 </label>
-                <select
-                  name="user_id"
-                  value={formData.user_id}
-                  onChange={handleInputChange}
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="example@email.com"
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 ${
-                    errors.user_id ? 'border-red-300' : 'border-gray-300'
+                    errors.email ? 'border-red-300' : 'border-gray-300'
                   }`}
-                >
-                  <option value="">اختر المستخدم</option>
-                  {users.map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} - {user.email}
-                    </option>
-                  ))}
-                </select>
-                {errors.user_id && (
-                  <p className="mt-1 text-sm text-red-600">{errors.user_id}</p>
+                  required
+                />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                )}
+                {emailValidation.loading && (
+                  <p className="mt-1 text-sm text-yellow-600">
+                    <i className="fas fa-spinner fa-spin ml-1"></i>
+                    جاري التحقق من البريد الإلكتروني...
+                  </p>
+                )}
+                {emailValidation.valid && user && (
+                  <p className="mt-1 text-sm text-green-600">
+                    <i className="fas fa-check-circle ml-1"></i>
+                    تم التحقق
+                  </p>
                 )}
               </div>
 
-              {/* Plan */}
+              {/* Plan Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   الخطة *
@@ -326,32 +422,40 @@ const SubscriptionEdit = () => {
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 ${
                     errors.plan_id ? 'border-red-300' : 'border-gray-300'
                   }`}
+                  required
                 >
                   <option value="">اختر الخطة</option>
                   {plans.map(plan => (
                     <option key={plan.id} value={plan.id}>
-                      {plan.name} - {plan.price} ريال ({plan.duration})
+                      {plan.name} - {plan.price} $ ({plan.duration} يوم)
                     </option>
                   ))}
                 </select>
                 {errors.plan_id && (
                   <p className="mt-1 text-sm text-red-600">{errors.plan_id}</p>
                 )}
+                {formData.plan_id && (
+                  <p className="mt-1 text-sm text-green-600">
+                    <i className="fas fa-check-circle ml-1"></i>
+                    تم اختيار الخطة
+                  </p>
+                )}
               </div>
 
-              {/* Start Date */}
+{/* Start Date */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  تاريخ البداية *
+                  تاريخ البداية 
                 </label>
                 <input
                   type="date"
                   name="start_date"
                   value={formData.start_date}
-                  onChange={handleInputChange}
+                  onChange={handleStartDateChange}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 ${
                     errors.start_date ? 'border-red-300' : 'border-gray-300'
                   }`}
+                  required
                 />
                 {errors.start_date && (
                   <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>
@@ -361,7 +465,7 @@ const SubscriptionEdit = () => {
               {/* End Date */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  تاريخ الانتهاء *
+                  تاريخ الانتهاء 
                 </label>
                 <input
                   type="date"
@@ -371,6 +475,8 @@ const SubscriptionEdit = () => {
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 ${
                     errors.end_date ? 'border-red-300' : 'border-gray-300'
                   }`}
+                  required
+                  min={formData.start_date}
                 />
                 {errors.end_date && (
                   <p className="mt-1 text-sm text-red-600">{errors.end_date}</p>
@@ -380,7 +486,7 @@ const SubscriptionEdit = () => {
               {/* Price */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  السعر (ريال) *
+                  السعر ($) 
                 </label>
                 <input
                   type="number"
@@ -392,6 +498,8 @@ const SubscriptionEdit = () => {
                   }`}
                   placeholder="أدخل السعر"
                   step="0.01"
+                  min="0"
+                  required
                 />
                 {errors.price && (
                   <p className="mt-1 text-sm text-red-600">{errors.price}</p>
@@ -412,6 +520,7 @@ const SubscriptionEdit = () => {
                   <option value="credit_card">بطاقة ائتمان</option>
                   <option value="bank_transfer">تحويل بنكي</option>
                   <option value="cash">نقدي</option>
+                  <option value="wallet">محفظة إلكترونية</option>
                 </select>
               </div>
             </div>
@@ -420,7 +529,7 @@ const SubscriptionEdit = () => {
           {/* Features */}
           {getSelectedPlanFeatures().length > 0 && (
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">مميزات الخطة</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">مميزات الخطة المحددة</h3>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <ul className="space-y-2">
                   {getSelectedPlanFeatures().map((feature, index) => (
@@ -453,6 +562,7 @@ const SubscriptionEdit = () => {
                   <option value="expired">منتهي</option>
                   <option value="cancelled">ملغي</option>
                   <option value="pending">قيد الانتظار</option>
+                  <option value="suspended">موقوف</option>
                 </select>
               </div>
 
@@ -468,6 +578,7 @@ const SubscriptionEdit = () => {
                   />
                   <span className="text-sm font-medium text-gray-700">التجديد التلقائي</span>
                 </label>
+                <span className="text-xs text-gray-500 mr-2">(سيتم تجديد الاشتراك تلقائياً عند انتهائه)</span>
               </div>
             </div>
           </div>
@@ -481,8 +592,9 @@ const SubscriptionEdit = () => {
               onChange={handleInputChange}
               rows="4"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
-              placeholder="أدخل أي ملاحظات إضافية..."
+              placeholder="أدخل أي ملاحظات إضافية حول الاشتراك..."
             />
+            <p className="text-sm text-gray-500 mt-1">هذا الحقل اختياري، يمكنك إضافة أي ملاحظات تريدها</p>
           </div>
 
           {/* Action Buttons */}
@@ -496,7 +608,7 @@ const SubscriptionEdit = () => {
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !emailValidation.valid || !formData.plan_id}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 flex items-center"
             >
               {isLoading && <i className="fas fa-spinner fa-spin ml-2"></i>}

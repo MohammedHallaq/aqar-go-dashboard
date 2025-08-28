@@ -1,7 +1,7 @@
 // Helper Functions
 
 // Format currency
-export const formatCurrency = (amount, currency = 'ريال') => {
+export const formatCurrency = (amount, currency = '$') => {
   return `${amount.toLocaleString()} ${currency}`;
 };
 

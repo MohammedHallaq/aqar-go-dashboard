@@ -122,7 +122,7 @@ const PropertiesManagement = () => {
   };
 
   const formatPrice = (price) => {
-    return `${price.toLocaleString()} ريال`;
+    return `${price.toLocaleString()} $`;
   };
 
   const renderPropertyDetails = (property) => {

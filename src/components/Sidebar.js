@@ -10,7 +10,8 @@ const Sidebar = () => {
     { id: 'users', label: 'إدارة المستخدمين', icon: 'fas fa-users', path: '/users' },
     { id: 'properties', label: 'إدارة العقارات', icon: 'fas fa-home', path: '/properties' },
     { id: 'ads', label: 'إدارة الإعلانات', icon: 'fas fa-bullhorn', path: '/ads' },
-    { id: 'subscriptions', label: 'إدارة الاشتراكات', icon: 'fas fa-crown', path: '/subscriptions' }
+    { id: 'subscriptions', label: 'إدارة الاشتراكات', icon: 'fas fa-crown', path: '/subscriptions' },
+    { id: 'reports', label: 'إدارة البلاغات', icon: 'fas fa-flag', path: '/reports' }
   ];
 
   const isActive = (path) => {

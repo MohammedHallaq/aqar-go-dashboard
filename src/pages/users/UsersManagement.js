@@ -106,10 +106,17 @@ const UsersManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1 }</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center ml-3">
-                        <i className="fas fa-user text-blue-600 text-sm"></i>
-                      </div>
-                      <span className="text-sm font-medium text-gray-500">{user.first_name}</span>
+                     {user.profile?.image_url && 
+                        <img 
+                           src={user.profile?.image_url ?? "/default-avatar.png"} 
+                          alt="Profile" 
+                          className="w-12 h-12 rounded-full object-cover ml-3"
+                        /> 
+                        ||
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center ml-3">
+                        <i className="fas fa-user text-gray-600 text-sm"></i>
+                        </div>}
+                        <span className="text-sm font-medium text-gray-500">{user.first_name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

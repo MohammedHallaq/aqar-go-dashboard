@@ -30,16 +30,6 @@ const Header = ({ onLogout }) => {
         </div>
         
         <div className="flex items-center space-x-4 space-x-reverse">
-          <div className="relative">
-            <input 
-              type="text" 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="البحث عن عقار أو مستخدم..." 
-              className="w-64 px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200" 
-            />
-            <i className="fas fa-search absolute right-3 top-3 text-gray-400"></i>
-          </div>
           
           <div className="relative">
             <button 

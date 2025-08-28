@@ -18,7 +18,7 @@ import AdEdit from './pages/ads/AdEdit';
 import SubscriptionsManagement from './pages/subscriptions/SubscriptionsManagement';
 import SubscriptionEdit from './pages/subscriptions/SubscriptionEdit';
 import PlanForm from './pages/subscriptions/PlansForm';
-
+import ReportManagement from './pages/reports/ReportsManagement';
 // Import Context
 import { User } from './Contexts/Context';
 
@@ -76,6 +76,8 @@ function App() {
                       <Route path="/subscriptions" element={<SubscriptionsManagement />} />
                       <Route path="/subscriptions/new" element={<SubscriptionEdit />} />
                       <Route path="/subscriptions/edit/:id" element={<SubscriptionEdit />} />
+                      {/* Reports Routes */}
+                      <Route path="/reports" element={<ReportManagement />} />
                     </Routes>
                   </main>
                 </div>
