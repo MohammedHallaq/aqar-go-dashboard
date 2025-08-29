@@ -95,7 +95,7 @@ const handleBlockUser = async (e) => {
   const handleUnblockUser = async (blockId) => {
     if (window.confirm('هل أنت متأكد من فك حظر هذا المستخدم؟')) {
       try {
-        const response = await axios.delete(`http://116.203.254.150:8001/api/block/unblock/${blockId}`, {
+        const response = await axios.delete(URL+`api/block/unblock/${blockId}`, {
           headers: {
             Accept: "application/json",
             Authorization: "Bearer " + context.auth.token,
