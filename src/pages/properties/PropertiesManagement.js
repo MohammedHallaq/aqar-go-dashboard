@@ -86,9 +86,9 @@ const PropertiesManagement = () => {
   };
 
   const filteredProperties = properties.filter(prop => {
-    const matchesSearch = prop.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         prop.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         prop.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = prop.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         prop.owner?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         prop.location?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filter === 'all' || prop.status === filter;
     return matchesSearch && matchesFilter;
   });

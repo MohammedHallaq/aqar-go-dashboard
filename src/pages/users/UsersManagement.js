@@ -2,13 +2,15 @@ import React, { useEffect,useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStatusBadgeClasses } from '../../utils/helpers';
 import { User } from '../../Contexts/Context';
-import { URL } from '../../utils/constants';
+import { URL, USER_ROLES } from '../../utils/constants';
 import axios from 'axios';
 const UsersManagement = () => {
   const navigate = useNavigate();
   const context = useContext(User);
   const [users, setUsers] = useState([]);
   const [runUser,setRun] = useState(0);
+  const[showRoleModal,setShowRoleModal] = useState(false);
+  const [assignUserRole,setAssignUserRole] = useState();
   useEffect(() => {
         axios.get(URL+'api/user/getUsers',
             {
@@ -35,14 +37,52 @@ const UsersManagement = () => {
             console.log("none");
         }
     }
+    // دالة لفتح مودال الدور مع بيانات المستخدم
+const openRoleModal = (user_id) => {
+  setAssignUserRole({
+    user_id: user_id,
+    role_id: '',
+  });
+  setShowRoleModal(true);
+};
+
+// دالة تعديل دور المستخدم
+const handleRoleUser = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await axios.post(URL+'api/user/assignUserRole', assignUserRole, {
+      headers: {
+        Accept: "application/json",
+        Authorization: "Bearer " + context.auth.token,
+      },
+    });
+
+    if (response.data.status === 1) {
+      setShowRoleModal(false);
+      setAssignUserRole({user_id: '',role_id: ''});
+      setRun((prev) => prev + 1)
+      // يمكنك إضافة أي تحديثات إضافية هنا إذا لزم الأمر
+    }
+  } catch (error) {
+    console.error('Error roleing user:', error);
+    alert('حدث خطأ أثناء تعديل الدور');
+  }
+};
+const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setAssignUserRole(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          user.last_name.toLowerCase().includes(searchTerm.toLocaleLowerCase())||
-                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || user.status === filterStatus;
+    const matchesSearch = user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          user.last_name?.toLowerCase().includes(searchTerm.toLocaleLowerCase())||
+                          user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || user.role_name?.includes(filterStatus);
     return matchesSearch && matchesFilter;
   });
 
@@ -82,8 +122,9 @@ const UsersManagement = () => {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">جميع المستخدمين</option>
-              <option value="active">المستخدمون النشطون</option>
-              <option value="inactive">المستخدمون غير النشطين</option>
+              <option value="client">العملاء</option>
+              <option value="premium_client">العملاء المميزون</option>
+              <option value="admin">المدراء</option>
             </select>
           </div>
         </div>
@@ -134,10 +175,10 @@ const UsersManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role_name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button 
-                      onClick={() => navigate(`/users/edit/${user.id}`)}
+                      onClick={() => openRoleModal(user.id)}
                       className="text-green-600 hover:text-green-900 ml-3 transition duration-200"
                     >
-                      تعديل
+                       تعديل الدور
                     </button>
                     <button 
                       onClick={() => deleteUser(user.id)}
@@ -159,6 +200,67 @@ const UsersManagement = () => {
           </div>
         )}
       </div>
+      {/* Role User Modal */}
+      {showRoleModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl max-w-md w-full">
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-bold text-gray-800">حظر مستخدم</h3>
+          <button
+            onClick={() => setShowRoleModal(false)}
+            className="text-gray-400 hover:text-gray-600 transition duration-200"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <form onSubmit={handleRoleUser}>
+        <div className="p-6 space-y-4">
+            {/* Role */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                الدور
+              </label>
+              <select
+                name="role_id"
+                value={assignUserRole.role_id}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
+              >
+                <option value={''}></option>
+                <option value={USER_ROLES.CLIENT}>عميل</option>
+                <option value={USER_ROLES.PREMIUM_CLIENT}>عميل مميز</option>
+                <option value={USER_ROLES.ADMIN}>مدير</option>
+              </select>
+            </div>
+
+        <div className="p-6 border-t border-gray-200 flex justify-end space-x-3 space-x-reverse">
+          <button
+            type="button"
+            onClick={() => setShowRoleModal(false)}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-200"
+          >
+            إلغاء
+          </button>
+          <button
+            type="submit"
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200 flex items-center"
+          >
+            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            تعديل الدور
+          </button>
+        </div>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
     </div>
   );
 };

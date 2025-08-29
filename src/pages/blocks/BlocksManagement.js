@@ -78,7 +78,7 @@ const handleBlockUser = async (e) => {
 
   // تصفية المحظورين حسب البحث
   const filteredBlocks = blocks.filter(block =>
-    block.blocked.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    block.blocked.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     block.reason?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -127,9 +127,11 @@ const handleBlockUser = async (e) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-gray-600">جاري التحميل...</span>
+      <div className="p-6 flex items-center justify-center h-64">
+        <div className="text-center">
+          <i className="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+          <p className="text-gray-600">جاري تحميل ...</p>
+        </div>
       </div>
     );
   }
