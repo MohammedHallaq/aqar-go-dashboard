@@ -2,7 +2,7 @@ import React, { useEffect, useContext, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { User } from '../../Contexts/Context';
-
+import { URL } from '../../utils/constants';
 const ReportsManagement = () => {
   const navigate = useNavigate();
   const context = useContext(User);
@@ -71,7 +71,7 @@ const ReportsManagement = () => {
         ...filters
       };
 
-      const response = await axios.post('https://aqargo.duckdns.org/api/report/index', params, {
+      const response = await axios.post(URL+'api/report/index', params, {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -133,7 +133,7 @@ const ReportsManagement = () => {
   const handleDeleteReport = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذا البلاغ؟')) {
       try {
-        await axios.delete(`https://aqargo.duckdns.org/api/report/delete/${id}`, {
+        await axios.delete(URL+`api/report/delete/${id}`, {
           headers: {
             Authorization: "Bearer " + context.auth.token,
           },
@@ -151,7 +151,7 @@ const ReportsManagement = () => {
 
   const handleCreateReport = async () => {
     try {
-      const response = await axios.post('https://aqargo.duckdns.org/api/report/create', newReport, {
+      const response = await axios.post(URL+'api/report/create', newReport, {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -477,7 +477,7 @@ const ReportsManagement = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">#{report.ad_id}</div>
+                      <div className="text-sm font-medium text-gray-900">{report.ad_id}</div>
                       <div className="text-sm text-gray-500">{report.ad?.is_active ? 'نشط' : 'غير نشط'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -527,7 +527,7 @@ const ReportsManagement = () => {
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-gray-800">تفاصيل البلاغ #{selectedReport.id}</h3>
+                <h3 className="text-xl font-bold text-gray-800">تفاصيل البلاغ {selectedReport.id}</h3>
                 <button 
                   onClick={closeReportModal}
                   className="text-gray-400 hover:text-gray-600"
@@ -566,7 +566,7 @@ const ReportsManagement = () => {
                 <div>
                   <h4 className="font-semibold text-gray-800 mb-2">الإعلان المبلغ عنه</h4>
                   <div>
-                    <p className="font-medium text-gray-900">رقم الإعلان: #{selectedReport.ad_id}</p>
+                    <p className="font-medium text-gray-900">رقم الإعلان: {selectedReport.ad_id}</p>
                     <p className="text-sm text-gray-500">الحالة: {selectedReport.ad?.is_active ? 'نشط' : 'غير نشط'}</p>
                     <p className="text-sm text-gray-500">المشاهدات: {selectedReport.ad?.views || 0}</p>
                     <p className="text-sm text-gray-500">
@@ -595,7 +595,7 @@ const ReportsManagement = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">رقم البلاغ: </span>
-                    <span>#{selectedReport.id}</span>
+                    <span>{selectedReport.id}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">تاريخ الإنشاء: </span>
@@ -617,11 +617,11 @@ const ReportsManagement = () => {
                 إغلاق
               </button>
               <button 
-                onClick={() => navigateToAd(selectedReport.ad_id)}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
+                onClick={() => navigate(`/blocks/new/${selectedReport.ad.property.user.id}`)}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center"
               >
-                <i className="fas fa-external-link-alt ml-2"></i>
-                عرض الإعلان
+                <i className="fas fa-ban ml-2"></i>
+                حظر صاحب الإعلان
               </button>
               <button 
                 onClick={() => handleDeleteReport(selectedReport.id)}

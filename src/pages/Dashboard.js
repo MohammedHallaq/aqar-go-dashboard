@@ -1,26 +1,35 @@
-import React from 'react';
-
+import React, { useEffect,useContext, useState } from 'react';
+import axios from 'axios';
+import { User } from '../Contexts/Context';
+import { useNavigate } from 'react-router-dom';
+import { URL } from '../utils/constants';
 const Dashboard = () => {
+  const context = useContext(User);
+  const [ data , setData] = useState({});
+  const navigate = useNavigate();
+  useEffect(() => {
+          axios.get(URL+'api/user/extra_info',
+              {
+                  headers:{
+                      Accept:"application/json",
+                      Authorization:"Bearer" + context.auth.token,
+                  },
+              }
+          )
+          .then((data) => setData(data.data.data)).catch((err) => console.log(err))
+      },[context.auth.token]);
   const stats = [
     { 
       title: 'إجمالي المستخدمين', 
-      value: '1,234', 
+      value: data.number_of_users, 
       icon: 'fas fa-users', 
       color: 'blue',
       change: '+12%',
       changeType: 'increase'
     },
     { 
-      title: 'العقارات المنشورة', 
-      value: '856', 
-      icon: 'fas fa-home', 
-      color: 'green',
-      change: '+8%',
-      changeType: 'increase'
-    },
-    { 
       title: 'الإعلانات النشطة', 
-      value: '42', 
+      value: data.active_ads_number, 
       icon: 'fas fa-bullhorn', 
       color: 'purple',
       change: '+15%',
@@ -28,10 +37,10 @@ const Dashboard = () => {
     },
     { 
       title: 'الاشتراكات النشطة', 
-      value: '189', 
+      value: data.Active_users_number, 
       icon: 'fas fa-crown', 
       color: 'yellow',
-      change: '-3%',
+      change: '+12%',
       changeType: 'decrease'
     }
   ];
@@ -116,21 +125,27 @@ const Dashboard = () => {
           </div>
           <div className="p-6">
             <div className="grid grid-cols-2 gap-4">
-              <button className="p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition duration-200">
+              <button className="p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition duration-200"
+              onClick={() => navigate('/users/new')}
+              >
                 <i className="fas fa-plus text-blue-600 text-xl mb-2"></i>
                 <p className="text-sm font-medium text-gray-800">إضافة مستخدم</p>
               </button>
-              <button className="p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition duration-200">
+              {/* <button className="p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition duration-200">
                 <i className="fas fa-home text-green-600 text-xl mb-2"></i>
                 <p className="text-sm font-medium text-gray-800">إضافة عقار</p>
-              </button>
-              <button className="p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition duration-200">
+              </button> */}
+              <button className="p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition duration-200"
+              onClick={() => navigate('/ads/new')}
+              >
                 <i className="fas fa-bullhorn text-purple-600 text-xl mb-2"></i>
                 <p className="text-sm font-medium text-gray-800">إنشاء إعلان</p>
               </button>
-              <button className="p-4 border border-gray-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-300 transition duration-200">
+              <button className="p-4 border border-gray-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-300 transition duration-200"
+              onClick={() => navigate('/reports')}
+              >
                 <i className="fas fa-chart-bar text-yellow-600 text-xl mb-2"></i>
-                <p className="text-sm font-medium text-gray-800">عرض التقارير</p>
+                <p className="text-sm font-medium text-gray-800">عرض البلاغات</p>
               </button>
             </div>
           </div>

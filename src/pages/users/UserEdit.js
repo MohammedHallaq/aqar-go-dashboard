@@ -1,6 +1,6 @@
 import React, { useContext,useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { USER_ROLES } from '../../utils/constants';
+import { USER_ROLES , URL } from '../../utils/constants';
 import { isValidEmail, isValidSaudiPhone } from '../../utils/helpers';
 import { User } from '../../Contexts/Context';
 import axios from 'axios';
@@ -15,14 +15,15 @@ const UserEdit = () => {
     email: '',
     phone_number: '',
     password: '',
-    password_confirmation: ''
+    password_confirmation: '',
+    role_id: ''
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isEditing) {
-      axios(`https://aqargo.duckdns.org/api/user/show/${id}`,{
+      axios(URL+`api/user/show/${id}`,{
                 headers:{
                     Accept:"application/json",
                     Authorization:"Bearer" + context.auth.token,
@@ -78,8 +79,8 @@ const UserEdit = () => {
     return Object.keys(newErrors).length === 0;
   };
   const url = isEditing 
-  ? `https://aqargo.duckdns.org/api/user/update/${id}` 
-  : `https://aqargo.duckdns.org/api/user/create`;
+  ? URL+`api/user/update/${id}` 
+  : URL+`api/user/create`;
   async function Submit(e) {
         e.preventDefault();
         if (!validateForm()) {
@@ -222,13 +223,13 @@ const UserEdit = () => {
                 الدور
               </label>
               <select
-                name="role"
-                value={formData.role || ""}
+                name="role_id"
+                value={formData.role_id}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
               >
-                <option value={USER_ROLES.USER}>مستخدم</option>
-                <option value={USER_ROLES.MODERATOR}>مشرف</option>
+                <option value={USER_ROLES.CLIENT}>عميل</option>
+                <option value={USER_ROLES.PREMIUM_CLIENT}>عميل مميز</option>
                 <option value={USER_ROLES.ADMIN}>مدير</option>
               </select>
             </div>

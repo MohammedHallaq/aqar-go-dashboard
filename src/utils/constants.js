@@ -4,11 +4,11 @@ export const APP_VERSION = '1.0.0';
 
 // User Roles
 export const USER_ROLES = {
-  ADMIN: 'admin',
-  USER: 'user',
-  MODERATOR: 'moderator'
+  ADMIN:1 ,
+  CLIENT:2 ,
+  PREMIUM_CLIENT:3 ,
 };
-
+export const URL = 'https://aqargo.duckdns.org/';
 // Property Types
 export const PROPERTY_TYPES = [
   'شقة',

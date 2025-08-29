@@ -1,4 +1,4 @@
-import React, { useContext ,useState } from 'react';
+import React, {useEffect, useContext ,useState } from 'react';
 import { User } from "../Contexts/Context";
 const Header = ({ onLogout }) => {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -9,7 +9,36 @@ const Header = ({ onLogout }) => {
     { id: 2, message: 'مستخدم جديد سجل في التطبيق', time: 'منذ 15 دقيقة', type: 'user' },
     { id: 3, message: 'انتهاء اشتراك مستخدم', time: 'منذ ساعة', type: 'subscription' }
   ];
+  function SystemClock() {
+  const [dateTime, setDateTime] = useState(new Date());
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDateTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer); // تنظيف عند الخروج
+  }, []);
+
+  return (
+    <div className="text-center p-2 bg-gray-900 text-white rounded-lg">
+      {/* الساعة */}
+      <p className="text-lg font-semibold">
+        {dateTime.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        })}
+      </p>
+
+      {/* التاريخ */}
+      <p className="text-sm">
+        {dateTime.toLocaleDateString("en-US")}
+      </p>
+    </div>
+  );
+}
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'property': return 'fas fa-home text-blue-500';

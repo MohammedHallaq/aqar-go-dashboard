@@ -8,10 +8,11 @@ const Sidebar = () => {
   const menuItems = [
     { id: 'dashboard', label: 'الرئيسية', icon: 'fas fa-tachometer-alt', path: '/dashboard' },
     { id: 'users', label: 'إدارة المستخدمين', icon: 'fas fa-users', path: '/users' },
-    { id: 'properties', label: 'إدارة العقارات', icon: 'fas fa-home', path: '/properties' },
+    // { id: 'properties', label: 'إدارة العقارات', icon: 'fas fa-home', path: '/properties' },
     { id: 'ads', label: 'إدارة الإعلانات', icon: 'fas fa-bullhorn', path: '/ads' },
     { id: 'subscriptions', label: 'إدارة الاشتراكات', icon: 'fas fa-crown', path: '/subscriptions' },
-    { id: 'reports', label: 'إدارة البلاغات', icon: 'fas fa-flag', path: '/reports' }
+    { id: 'reports', label: 'إدارة البلاغات', icon: 'fas fa-flag', path: '/reports' },
+    { id: 'blocks', label: 'قائمة الحظر', icon: 'fas fa-ban', path: '/blocks' }
   ];
 
   const isActive = (path) => {

@@ -19,6 +19,8 @@ import SubscriptionsManagement from './pages/subscriptions/SubscriptionsManageme
 import SubscriptionEdit from './pages/subscriptions/SubscriptionEdit';
 import PlanForm from './pages/subscriptions/PlansForm';
 import ReportManagement from './pages/reports/ReportsManagement';
+import BlocksManagement from './pages/blocks/BlocksManagement';
+import BlockEdit from './pages/blocks/BlockEdit';
 // Import Context
 import { User } from './Contexts/Context';
 
@@ -78,6 +80,9 @@ function App() {
                       <Route path="/subscriptions/edit/:id" element={<SubscriptionEdit />} />
                       {/* Reports Routes */}
                       <Route path="/reports" element={<ReportManagement />} />
+                      {/* Blocks Routes */}
+                      <Route path="/blocks" element={<BlocksManagement />} />
+                      <Route path="/blocks/new/:blocked_id" element={<BlockEdit />} />
                     </Routes>
                   </main>
                 </div>

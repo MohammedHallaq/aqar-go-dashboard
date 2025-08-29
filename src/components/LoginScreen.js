@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import axios from "axios";
 import { User } from "../Contexts/Context";
 import { useNavigate } from "react-router-dom";
+import { URL } from '../utils/constants';
 const LoginScreen = ({ onLogin }) => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
@@ -15,7 +16,7 @@ const LoginScreen = ({ onLogin }) => {
     setIsLoading(true);
     setError('');
     try {
-      let res = await axios.post('https://aqargo.duckdns.org/api/auth/login', {
+      let res = await axios.post(URL+'api/auth/login', {
         email: credentials.email,
         password: credentials.password,
       });

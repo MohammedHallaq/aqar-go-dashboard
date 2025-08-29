@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AD_TYPES } from '../../utils/constants';
+import { AD_TYPES, URL } from '../../utils/constants';
 import axios from 'axios';
 import { User } from '../../Contexts/Context';
 
@@ -37,7 +37,7 @@ const AdEdit = () => {
   const fetchProperties = useCallback(async () => {
     setPropertiesLoading(true);
     try {
-      const response = await axios.get('https://aqargo.duckdns.org/api/property/getProperty/4', {
+      const response = await axios.get(URL+'api/property/getProperty/4', {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -67,7 +67,7 @@ const AdEdit = () => {
   const fetchAdData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`https://aqargo.duckdns.org/api/ad/show/${id}`, {
+      const response = await axios.get(URL+`api/ad/show/${id}`, {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -172,13 +172,13 @@ const AdEdit = () => {
       };
 
       if (isEditing) {
-        await axios.put(`https://aqargo.duckdns.org/api/ad/update/${id}`, adData, {
+        await axios.put(URL+`api/ad/update/${id}`, adData, {
           headers: {
             Authorization: "Bearer " + context.auth.token,
           },
         });
       } else {
-        await axios.post('https://aqargo.duckdns.org/api/ad/create', adData, {
+        await axios.post(URL+'api/ad/create', adData, {
           headers: {
             Authorization: "Bearer " + context.auth.token,
           },

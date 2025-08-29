@@ -1,6 +1,7 @@
 import React, { useEffect, useContext, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStatusBadgeClasses } from '../../utils/helpers';
+import { URL } from '../../utils/constants';
 import axios from 'axios';
 import { User } from '../../Contexts/Context';
 
@@ -38,7 +39,7 @@ const AdsManagement = () => {
     setError(null);
     
     try {
-      const response = await axios.get(`https://aqargo.duckdns.org/api/ad/index?page=${page}`, {
+      const response = await axios.get(URL+`api/ad/index?page=${page}`, {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
@@ -74,7 +75,7 @@ const AdsManagement = () => {
   const handleDeleteAd = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
       try {
-        await axios.delete(`https://aqargo.duckdns.org/api/ad/delete/${id}`, {
+        await axios.delete(URL+`api/ad/delete/${id}`, {
           headers: {
             Authorization: "Bearer " + context.auth.token,
           },
@@ -99,8 +100,8 @@ const AdsManagement = () => {
     
     try {
       const endpoint = newStatus 
-        ? `https://aqargo.duckdns.org/api/ad/activate/${id}`
-        : `https://aqargo.duckdns.org/api/ad/unactivate/${id}`;
+        ? URL+`api/ad/activate/${id}`
+        : URL+`api/ad/unactivate/${id}`;
       
       await axios.get(endpoint, {
         headers: {
@@ -709,7 +710,7 @@ const AdsManagement = () => {
             <div className="bg-gray-50 px-6 py-3 flex justify-between items-center">
               <div className="text-sm text-gray-500">
                 <i className="fas fa-ad ml-1"></i>
-                الإعلان #{ad.id}
+                الإعلان {ad.id}
               </div>
               <div className="flex space-x-2 space-x-reverse">
                 <button 

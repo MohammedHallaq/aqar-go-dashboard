@@ -2,6 +2,7 @@ import React, { useEffect,useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStatusBadgeClasses } from '../../utils/helpers';
 import { User } from '../../Contexts/Context';
+import { URL } from '../../utils/constants';
 import axios from 'axios';
 const UsersManagement = () => {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ const UsersManagement = () => {
   const [users, setUsers] = useState([]);
   const [runUser,setRun] = useState(0);
   useEffect(() => {
-        axios.get('https://aqargo.duckdns.org/api/user/getUsers',
+        axios.get(URL+'api/user/getUsers',
             {
                 headers:{
                     Accept:"application/json",
@@ -21,7 +22,7 @@ const UsersManagement = () => {
     },[runUser]);
     async function deleteUser(id){
         try{
-            let res = await axios.delete(`https://aqargo.duckdns.org/api/user/delete/${id}`,{
+            let res = await axios.delete(URL+`api/user/delete/${id}`,{
                 headers:{
                     Accept:"application/json",
                     Authorization:"Bearer" + context.auth.token,
@@ -96,7 +97,8 @@ const UsersManagement = () => {
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الاسم الثاني</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">البريد الإلكتروني</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الهاتف</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">تاريخ التسجيل</th>
+                {/* <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">تاريخ التسجيل</th> */}
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الدور</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الإجراءات</th>
               </tr>
             </thead>
@@ -106,7 +108,7 @@ const UsersManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1 }</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                     {user.profile?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org") && 
+                     {user.profile?.image_url && 
                         <img 
                            src={user.profile?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org") ?? "/default-avatar.png"} 
                           alt="Profile" 
@@ -128,7 +130,8 @@ const UsersManagement = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phone_number}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.created_at}</td>
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.created_at}</td> */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role_name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button 
                       onClick={() => navigate(`/users/edit/${user.id}`)}
