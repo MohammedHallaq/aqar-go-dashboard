@@ -158,7 +158,7 @@ const PlanForm = () => {
         }
         
         // تحديث الخطة الموجودة
-        response = await axios.post(URL+`api/plans/${id}`, preparedData, {
+        response = await axios.put(URL+`api/plans/${id}`, preparedData, {
           headers: {
             Accept: "application/json",
             Authorization: "Bearer " + context.auth.token,
