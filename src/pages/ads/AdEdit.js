@@ -13,19 +13,10 @@ const AdEdit = () => {
   const [properties, setProperties] = useState([]);
   const [propertiesLoading, setPropertiesLoading] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    type: '',
-    client: '',
-    startDate: '',
-    endDate: '',
-    budget: '',
-    targetAudience: '',
-    keywords: '',
-    imageUrl: '',
-    linkUrl: '',
-    status: 'active',
-    propertyId: '' // ID العقار المختار
+    property_id: '',
+    start_date: '',
+    end_date: '',
+    is_active: true
   });
 
   const [errors, setErrors] = useState({});
@@ -37,26 +28,24 @@ const AdEdit = () => {
   const fetchProperties = useCallback(async () => {
     setPropertiesLoading(true);
     try {
-      const response = await axios.get(URL+'api/property/getProperty/4', {
+      const response = await axios.get(URL+'api/property/getUserProperties', {
         headers: {
           Accept: "application/json",
           Authorization: "Bearer " + context.auth.token,
         },
       });
       
-      if (response && response.data) {
-        // التأكد من أن البيانات مصفوفة
-        const propertiesData = Array.isArray(response.data.data) 
-          ? response.data.data 
-          : [response.data.data];
-        setProperties(propertiesData);
+      if (response.data && response.data.data) {
+        // استخراج البيانات من response.data.data.data
+        const propertiesData = response.data.data.data || response.data.data || [];
+        setProperties(Array.isArray(propertiesData) ? propertiesData : [propertiesData]);
       }
     } catch (error) {
       console.error('Error fetching properties:', error);
     } finally {
       setPropertiesLoading(false);
     }
-  }, [context.auth.token]);
+  }, [showPropertySelector]);
 
   // جلب العقارات مرة واحدة فقط
   useEffect(() => {
@@ -74,22 +63,13 @@ const AdEdit = () => {
         },
       });
       
-      if (response.data && response.data.data) {
-        const adData = response.data.data;
+      if (response.data && response.data.ad) {
+        const adData = response.data.ad;
         setFormData({
-          title: adData.property?.name || '',
-          description: adData.property?.description || '',
-          type: 'بانر', // يمكن تعديله حسب نوع الإعلان الفعلي
-          client: 'عميل', // يمكن تعديله حسب البيانات الفعلية
-          startDate: adData.start_date?.split('T')[0] || '',
-          endDate: adData.end_date?.split('T')[0] || '',
-          budget: '5000', // يمكن تعديله حسب البيانات الفعلية
-          targetAudience: 'الباحثين عن عقارات',
-          keywords: 'عقارات',
-          imageUrl: adData.property?.images?.[0]?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org") || '',
-          linkUrl: `https://example.com/properties/${adData.property_id}`,
-          status: adData.is_active ? 'active' : 'paused',
-          propertyId: adData.property_id?.toString() || ''
+          property_id: adData.property_id?.toString() || '',
+          start_date: adData.start_date?.split('T')[0] || '',
+          end_date: adData.end_date?.split('T')[0] || '',
+          is_active: adData.is_active || true
         });
       }
     } catch (error) {
@@ -109,36 +89,18 @@ const AdEdit = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.title.trim()) {
-      newErrors.title = 'عنوان الإعلان مطلوب';
+    if (!formData.property_id) {
+      newErrors.property_id = 'يجب اختيار عقار للإعلان';
     }
 
-    if (!formData.type) {
-      newErrors.type = 'نوع الإعلان مطلوب';
+    if (!formData.start_date) {
+      newErrors.start_date = 'تاريخ البداية مطلوب';
     }
 
-    if (!formData.client.trim()) {
-      newErrors.client = 'اسم العميل مطلوب';
-    }
-
-    if (!formData.startDate) {
-      newErrors.startDate = 'تاريخ البداية مطلوب';
-    }
-
-    if (!formData.endDate) {
-      newErrors.endDate = 'تاريخ الانتهاء مطلوب';
-    } else if (formData.startDate && new Date(formData.endDate) <= new Date(formData.startDate)) {
-      newErrors.endDate = 'تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية';
-    }
-
-    if (!formData.budget) {
-      newErrors.budget = 'الميزانية مطلوبة';
-    } else if (isNaN(formData.budget) || parseFloat(formData.budget) <= 0) {
-      newErrors.budget = 'الميزانية يجب أن تكون رقم صحيح';
-    }
-
-    if (!formData.propertyId) {
-      newErrors.propertyId = 'يجب اختيار عقار للإعلان';
+    if (!formData.end_date) {
+      newErrors.end_date = 'تاريخ الانتهاء مطلوب';
+    } else if (formData.start_date && new Date(formData.end_date) <= new Date(formData.start_date)) {
+      newErrors.end_date = 'تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية';
     }
 
     setErrors(newErrors);
@@ -156,19 +118,10 @@ const AdEdit = () => {
 
     try {
       const adData = {
-        title: formData.title,
-        description: formData.description,
-        type: formData.type,
-        client: formData.client,
-        start_date: formData.startDate,
-        end_date: formData.endDate,
-        budget: parseFloat(formData.budget),
-        target_audience: formData.targetAudience,
-        keywords: formData.keywords,
-        image_url: formData.imageUrl,
-        link_url: formData.linkUrl,
-        property_id: parseInt(formData.propertyId),
-        is_active: formData.status === 'active'
+        property_id: parseInt(formData.property_id),
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        is_active: formData.is_active
       };
 
       if (isEditing) {
@@ -188,7 +141,7 @@ const AdEdit = () => {
       navigate('/ads');
     } catch (error) {
       console.error('Error saving ad:', error);
-      alert('فشل في حفظ الإعلان');
+      alert('فشل في حفظ الإعلان: ' + (error.response?.data?.message || error.message));
     } finally {
       setIsLoading(false);
     }
@@ -212,17 +165,13 @@ const AdEdit = () => {
   const handlePropertySelect = (property) => {
     setFormData(prev => ({
       ...prev,
-      propertyId: property.id.toString(),
-      title: property.name || 'إعلان عقار',
-      description: property.description || '',
-      imageUrl: property.images?.[0]?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org") || '',
-      linkUrl: `https://example.com/properties/${property.id}`
+      property_id: property.id.toString()
     }));
     setShowPropertySelector(false);
   };
 
   const getSelectedProperty = () => {
-    return properties.find(prop => prop.id.toString() === formData.propertyId);
+    return properties.find(prop => prop.id.toString() === formData.property_id);
   };
 
   const filteredProperties = properties.filter(property =>
@@ -257,6 +206,15 @@ const AdEdit = () => {
     return icons[type] || 'fas fa-home';
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'غير محدد';
+    try {
+      return new Date(dateString).toLocaleDateString('ar-EG');
+    } catch {
+      return 'غير محدد';
+    }
+  };
+
   if (isLoading && isEditing) {
     return (
       <div className="p-6 flex items-center justify-center h-64">
@@ -289,91 +247,11 @@ const AdEdit = () => {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <form onSubmit={handleSubmit} className="p-6">
-          {/* Basic Information */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">المعلومات الأساسية</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  عنوان الإعلان *
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 ${
-                    errors.title ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="أدخل عنوان الإعلان"
-                />
-                {errors.title && (
-                  <p className="mt-1 text-sm text-red-600">{errors.title}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  نوع الإعلان *
-                </label>
-                <select
-                  name="type"
-                  value={formData.type}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 ${
-                    errors.type ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">اختر نوع الإعلان</option>
-                  {AD_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-                {errors.type && (
-                  <p className="mt-1 text-sm text-red-600">{errors.type}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  اسم العميل *
-                </label>
-                <input
-                  type="text"
-                  name="client"
-                  value={formData.client}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 ${
-                    errors.client ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="أدخل اسم العميل"
-                />
-                {errors.client && (
-                  <p className="mt-1 text-sm text-red-600">{errors.client}</p>
-                )}
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  وصف الإعلان
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows="4"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  placeholder="أدخل وصف مفصل للإعلان"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Property Selection */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">اختيار العقار</h3>
             <div className="grid grid-cols-1 gap-6">
-              {formData.propertyId ? (
+              {formData.property_id ? (
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-semibold text-gray-800">العقار المختار</h4>
@@ -389,9 +267,17 @@ const AdEdit = () => {
                   
                   {getSelectedProperty() && (
                     <div className="flex items-center space-x-3 space-x-reverse">
-                      <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <i className={`${getPropertyTypeIcon(getSelectedProperty().type)} text-blue-600 text-xl`}></i>
-                      </div>
+                      {getSelectedProperty().images?.[0]?.image_url ? (
+                        <img 
+                          src={getSelectedProperty().images[0].image_url.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} 
+                          alt={getSelectedProperty().name}
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <i className={`${getPropertyTypeIcon(getSelectedProperty().type)} text-blue-600 text-xl`}></i>
+                        </div>
+                      )}
                       <div className="flex-1">
                         <div className="flex items-center">
                           <span className="font-medium text-gray-900">{getSelectedProperty().name}</span>
@@ -422,15 +308,15 @@ const AdEdit = () => {
                   <div>اختر عقار للإعلان</div>
                 </button>
               )}
-              {errors.propertyId && (
-                <p className="text-sm text-red-600">{errors.propertyId}</p>
+              {errors.property_id && (
+                <p className="text-sm text-red-600">{errors.property_id}</p>
               )}
             </div>
           </div>
 
           {/* Campaign Details */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">تفاصيل الحملة</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">تفاصيل الفترة</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -438,15 +324,15 @@ const AdEdit = () => {
                 </label>
                 <input
                   type="date"
-                  name="startDate"
-                  value={formData.startDate}
+                  name="start_date"
+                  value={formData.start_date}
                   onChange={handleInputChange}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 ${
-                    errors.startDate ? 'border-red-300' : 'border-gray-300'
+                    errors.start_date ? 'border-red-300' : 'border-gray-300'
                   }`}
                 />
-                {errors.startDate && (
-                  <p className="mt-1 text-sm text-red-600">{errors.startDate}</p>
+                {errors.start_date && (
+                  <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>
                 )}
               </div>
 
@@ -456,98 +342,16 @@ const AdEdit = () => {
                 </label>
                 <input
                   type="date"
-                  name="endDate"
-                  value={formData.endDate}
+                  name="end_date"
+                  value={formData.end_date}
                   onChange={handleInputChange}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 ${
-                    errors.endDate ? 'border-red-300' : 'border-gray-300'
+                    errors.end_date ? 'border-red-300' : 'border-gray-300'
                   }`}
                 />
-                {errors.endDate && (
-                  <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>
+                {errors.end_date && (
+                  <p className="mt-1 text-sm text-red-600">{errors.end_date}</p>
                 )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الميزانية ($) *
-                </label>
-                <input
-                  type="number"
-                  name="budget"
-                  value={formData.budget}
-                  onChange={handleInputChange}
-                  min="100"
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 ${
-                    errors.budget ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="أدخل الميزانية"
-                />
-                {errors.budget && (
-                  <p className="mt-1 text-sm text-red-600">{errors.budget}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الجمهور المستهدف
-                </label>
-                <input
-                  type="text"
-                  name="targetAudience"
-                  value={formData.targetAudience}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  placeholder="مثال: الباحثين عن عقارات فاخرة"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الكلمات المفتاحية
-                </label>
-                <input
-                  type="text"
-                  name="keywords"
-                  value={formData.keywords}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  placeholder="مثال: عقارات، الرياض، فلل، شقق (مفصولة بفواصل)"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Media & Links */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">الوسائط والروابط</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  رابط الصورة
-                </label>
-                <input
-                  type="url"
-                  name="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  رابط الهدف
-                </label>
-                <input
-                  type="url"
-                  name="linkUrl"
-                  value={formData.linkUrl}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  placeholder="https://example.com"
-                />
               </div>
             </div>
           </div>
@@ -556,13 +360,13 @@ const AdEdit = () => {
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">الحالة</h3>
             <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
+              name="is_active"
+              value={formData.is_active}
+              onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.value === 'true' }))}
               className="w-full max-w-xs px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
             >
-              <option value="active">نشط</option>
-              <option value="paused">متوقف</option>
+              <option value={true}>نشط</option>
+              <option value={false}>متوقف</option>
             </select>
           </div>
 
@@ -634,9 +438,17 @@ const AdEdit = () => {
                       onClick={() => handlePropertySelect(property)}
                     >
                       <div className="flex items-center space-x-3 space-x-reverse">
-                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <i className={`${getPropertyTypeIcon(property.type)} text-blue-600`}></i>
-                        </div>
+                        {property.images?.[0]?.image_url ? (
+                          <img 
+                            src={property.images[0].image_url.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} 
+                            alt={property.name}
+                            className="w-12 h-12 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i className={`${getPropertyTypeIcon(property.type)} text-blue-600`}></i>
+                          </div>
+                        )}
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
                             <span className="font-medium text-gray-900">{property.name}</span>
@@ -649,6 +461,9 @@ const AdEdit = () => {
                             <span className="text-xs text-gray-400">{property.area} م²</span>
                             <span className="text-xs text-gray-400">
                               {getPropertyTypeText(property.type)}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {formatDate(property.created_at)}
                             </span>
                           </div>
                         </div>

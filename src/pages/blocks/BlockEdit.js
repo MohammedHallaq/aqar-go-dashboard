@@ -101,9 +101,11 @@ const BlockCreate = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-gray-600">جاري تحميل بيانات المستخدم...</span>
+      <div className="p-6 flex items-center justify-center h-64">
+        <div className="text-center">
+          <i className="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+          <p className="text-gray-600">جاري تحميل ...</p>
+        </div>
       </div>
     );
   }

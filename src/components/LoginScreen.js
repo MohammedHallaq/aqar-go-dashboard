@@ -15,6 +15,11 @@ const LoginScreen = ({ onLogin }) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    if(credentials.email !== 'moalqrfan2003@gmail.com'){
+      setUnauthorized(true)
+      setIsLoading(false);
+      return ;
+    }
     try {
       let res = await axios.post(URL+'api/auth/login', {
         email: credentials.email,

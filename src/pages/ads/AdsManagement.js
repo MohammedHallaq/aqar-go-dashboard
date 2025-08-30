@@ -23,6 +23,8 @@ const AdsManagement = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedAd, setSelectedAd] = useState(null);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   // Debounce effect للبحث
   useEffect(() => {
@@ -81,7 +83,6 @@ const AdsManagement = () => {
           },
         });
         
-        // تحديث محلي بدون إعادة جلب البيانات
         setAds(prevAds => prevAds.filter(ad => ad.id !== id));
         setPagination(prev => ({ ...prev, total: prev.total - 1 }));
         
@@ -109,7 +110,6 @@ const AdsManagement = () => {
         },
       });
       
-      // تحديث محلي بدون إعادة جلب البيانات
       setAds(prevAds => prevAds.map(ad => 
         ad.id === id ? { ...ad, is_active: newStatus } : ad
       ));
@@ -123,8 +123,36 @@ const AdsManagement = () => {
 
   const viewPropertyDetails = (ad) => {
     setSelectedAd(ad);
+    setCurrentImageIndex(0);
     setShowPropertyModal(true);
   };
+
+  const openImageModal = (ad, index = 0) => {
+    setSelectedAd(ad);
+    setCurrentImageIndex(index);
+    setShowImageModal(true);
+  };
+
+  const closeImageModal = () => {
+    setShowImageModal(false);
+  };
+
+  const nextImage = () => {
+    if (selectedAd && selectedAd.property && selectedAd.property.images) {
+      setCurrentImageIndex((prev) => 
+        prev < selectedAd.property.images.length - 1 ? prev + 1 : 0
+      );
+    }
+  };
+
+  const prevImage = () => {
+    if (selectedAd && selectedAd.property && selectedAd.property.images) {
+      setCurrentImageIndex((prev) => 
+        prev > 0 ? prev - 1 : selectedAd.property.images.length - 1
+      );
+    }
+  };
+
   const handleOpenWhatsApp = (phone) => {
     if (!phone) {
       alert("رقم الهاتف غير متوفر");
@@ -133,14 +161,13 @@ const AdsManagement = () => {
 
     let formattedNumber = phone.toString().replace(/\D/g, "");
     if (formattedNumber.startsWith("0")) {
-      formattedNumber = "963" + formattedNumber.substring(1); // مثال: سوريا
+      formattedNumber = "963" + formattedNumber.substring(1);
     }
 
     const url = `https://wa.me/${formattedNumber}`;
     window.open(url, "_blank");
   };
 
-  // الاتصال المباشر
   const handleCall = (phone) => {
     if (!phone) {
       alert("رقم الهاتف غير متوفر");
@@ -148,7 +175,7 @@ const AdsManagement = () => {
     }
     let formattedNumber = phone.toString().replace(/\D/g, "");
     if (formattedNumber.startsWith("0")) {
-      formattedNumber = "963" + formattedNumber.substring(1); // مثال: سوريا
+      formattedNumber = "963" + formattedNumber.substring(1);
     }
     window.location.href = `tel:${formattedNumber}`;
   };
@@ -228,6 +255,117 @@ const AdsManagement = () => {
     return icons[type] || 'fas fa-home';
   };
 
+  // دالة عرض الصور المعدلة
+  const renderAdImage = (ad) => {
+    const images = ad.property?.images || [];
+    const firstImage = images[0]?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org");
+    
+    return (
+      <div className="relative h-48 bg-gray-100 overflow-hidden rounded-t-lg cursor-pointer group">
+        {firstImage ? (
+          <>
+            <img 
+              src={firstImage} 
+              alt={ad.property?.name || 'إعلان'}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onClick={() => viewPropertyDetails(ad)}
+            />
+            {images.length > 1 && (
+              <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+                <i className="fas fa-images ml-1"></i>
+                {images.length}
+              </div>
+            )}
+          </>
+        ) : (
+          <div 
+            className="w-full h-full flex items-center justify-center text-gray-400 cursor-pointer"
+            onClick={() => viewPropertyDetails(ad)}
+          >
+            <i className="fas fa-ad text-4xl"></i>
+          </div>
+        )}
+        <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+          <i className="fas fa-ad ml-1"></i>
+          إعلان
+        </div>
+      </div>
+    );
+  };
+
+  // معرض الصور في المودال
+  const renderImageGallery = (property) => {
+    const images = property?.images || [];
+    
+    if (images.length === 0) {
+      return (
+        <div className="relative h-64 bg-gray-100 rounded-lg mb-6 flex items-center justify-center">
+          <i className={`${getPropertyTypeIcon(property.type)} text-4xl text-gray-400`}></i>
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative">
+        <div className="relative h-64 bg-gray-100 rounded-lg mb-4 overflow-hidden">
+          <img 
+            src={images[currentImageIndex]?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} 
+            alt={`${property.name} - صورة ${currentImageIndex + 1}`}
+            className="w-full h-full object-cover cursor-pointer"
+            onClick={() => openImageModal(selectedAd, currentImageIndex)}
+          />
+          
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition duration-200"
+              >
+                <i className="fas fa-chevron-left"></i>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition duration-200"
+              >
+                <i className="fas fa-chevron-right"></i>
+              </button>
+            </>
+          )}
+          
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+            {currentImageIndex + 1} / {images.length}
+          </div>
+        </div>
+
+        {images.length > 1 && (
+          <div className="grid grid-cols-4 gap-2 mb-6">
+            {images.map((image, index) => (
+              <div
+                key={image.id}
+                className={`relative h-16 cursor-pointer rounded border-2 transition-all duration-200 ${
+                  index === currentImageIndex ? 'border-blue-500' : 'border-gray-200'
+                }`}
+                onClick={() => setCurrentImageIndex(index)}
+              >
+                <img
+                  src={image.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")}
+                  alt={`صورة مصغرة ${index + 1}`}
+                  className="w-full h-full object-cover rounded"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderPropertyPreview = (ad) => {
     if (!ad.property) return null;
 
@@ -249,7 +387,8 @@ const AdsManagement = () => {
             <img 
               src={ad.property.images[0].image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} 
               alt={ad.property.name || 'عقار'}
-              className="w-16 h-16 object-cover rounded-lg"
+              className="w-16 h-16 object-cover rounded-lg cursor-pointer"
+              onClick={() => openImageModal(ad, 0)}
               onError={(e) => {
                 e.target.style.display = 'none';
               }}
@@ -271,7 +410,6 @@ const AdsManagement = () => {
           </div>
         </div>
 
-        {/* معلومات صاحب الإعلان */}
         {ad.property.user && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <h5 className="text-sm font-semibold text-gray-800 mb-2">معلومات المعلن</h5>
@@ -474,44 +612,14 @@ const AdsManagement = () => {
     return `${price?.toLocaleString('ar-EG') || '0'} $`;
   };
 
-  const renderAdImage = (ad) => {
-    const firstImage = ad.property?.images?.[0]?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org");
-    
+  const renderAdPerformance = (ad) => {
     return (
-      <div className="relative h-48 bg-gray-100 overflow-hidden rounded-t-lg cursor-pointer" onClick={() => viewPropertyDetails(ad)}>
-        {firstImage ? (
-          <img 
-            src={firstImage} 
-            alt={ad.property?.name || 'إعلان'}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
-            }}
-          />
-        ) : null}
-        <div className="w-full h-full flex items-center justify-center text-gray-400" style={firstImage ? { display: 'none' } : {}}>
-          <i className="fas fa-ad text-4xl"></i>
-        </div>
-        <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-          <i className="fas fa-ad ml-1"></i>
-          إعلان
-        </div>
+      <div className="text-center">
+        <div className="text-2xl font-bold text-blue-600">{formatNumber(ad.views || 0)}</div>
+        <div className="text-xs text-gray-500">مشاهدة</div>
       </div>
     );
   };
-
-  const renderAdPerformance = (ad) => {
-    return (
-      //<div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600">{formatNumber(ad.views || 0)}</div>
-          <div className="text-xs text-gray-500">مشاهدة</div>
-        </div>
-      //</div>
-    );
-  };
-
 
   const renderPagination = () => {
     if (pagination.last_page <= 1) return null;
@@ -627,7 +735,7 @@ const AdsManagement = () => {
         </div>
         
         <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-          <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-purple-600">إجمالي المشاهدات</p>
               <p className="text-2xl font-bold text-purple-800">
@@ -635,6 +743,18 @@ const AdsManagement = () => {
               </p>
             </div>
             <i className="fas fa-eye text-purple-600 text-2xl"></i>
+          </div>
+        </div>
+        
+        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-orange-600">متوسط المشاهدات</p>
+              <p className="text-2xl font-bold text-orange-800">
+                {ads.length > 0 ? Math.round(ads.reduce((sum, ad) => sum + (ad.views || 0), 0) / ads.length) : 0}
+              </p>
+            </div>
+            <i className="fas fa-chart-line text-orange-600 text-2xl"></i>
           </div>
         </div>
       </div>
@@ -675,7 +795,7 @@ const AdsManagement = () => {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800">{ad.property?.name || 'إعلان بدون عنوان'}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{ad.id || 'بدون عنوان'}</p>
+                  <p className="text-sm text-gray-500 mt-1">رقم الإعلان: {ad.id}</p>
                 </div>
                 {getStatusBadge(ad.is_active)}
               </div>
@@ -720,13 +840,13 @@ const AdsManagement = () => {
                 >
                   <i className={ad.is_active ? 'fas fa-pause' : 'fas fa-play'}></i>
                 </button>
-                <button 
+                {/* <button 
                   onClick={() => navigate(`/ads/edit/${ad.id}`)}
                   className="text-green-600 hover:text-green-900 transition duration-200 p-1"
                   title="تعديل"
                 >
                   <i className="fas fa-edit"></i>
-                </button>
+                </button> */}
                 <button 
                   onClick={() => viewPropertyDetails(ad)}
                   className="text-purple-600 hover:text-purple-900 transition duration-200 p-1"
@@ -734,13 +854,13 @@ const AdsManagement = () => {
                 >
                   <i className="fas fa-eye"></i>
                 </button>
-                <button 
+                {/* <button 
                   onClick={() => handleDeleteAd(ad.id)}
                   className="text-red-600 hover:text-red-900 transition duration-200 p-1"
                   title="حذف"
                 >
                   <i className="fas fa-trash"></i>
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
@@ -774,24 +894,13 @@ const AdsManagement = () => {
             </div>
             
             <div className="p-6">
-              <div className="relative h-64 bg-gray-100 rounded-lg mb-6">
-                {selectedAd.property.images?.[0]?.image_url ? (
-                  <img 
-                    src={selectedAd.property.images[0].image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} 
-                    alt={selectedAd.property.name || 'عقار'}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <i className={`${getPropertyTypeIcon(selectedAd.property.type)} text-4xl`}></i>
-                  </div>
-                )}
-              </div>
+              {/* معرض الصور */}
+              {renderImageGallery(selectedAd.property)}
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <div>
                   <h4 className="text-lg font-semibold text-gray-800 mb-2">{selectedAd.property.name || 'بدون عنوان'}</h4>
-                  <p className="text-gray-600 mb-4">{selectedAd.id || 'بدون عنوان'}</p>
+                  <p className="text-gray-600 mb-4">{selectedAd.property.description || 'لا يوجد وصف'}</p>
                   
                   <div className="flex items-center text-sm text-gray-600 mb-2">
                     <i className={`${getPropertyTypeIcon(selectedAd.property.type)} ml-2`}></i>
@@ -808,6 +917,13 @@ const AdsManagement = () => {
                       <span className="text-blue-600">{selectedAd.property.area || '0'} م²</span>
                     </div>
                   </div>
+
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-green-800">العنوان:</span>
+                      <span className="text-green-600">{selectedAd.property.address || 'غير محدد'}</span>
+                    </div>
+                  </div>
                 </div>
                 
                 <div>
@@ -815,17 +931,14 @@ const AdsManagement = () => {
                   {renderPropertySpecificDetails(selectedAd.property)}
                 </div>
               </div>
-              
-              {selectedAd.property.description && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h5 className="font-semibold text-gray-800 mb-2">وصف العقار</h5>
-                  <p className="text-sm text-gray-600">{selectedAd.property.description}</p>
-                </div>
-              )}
 
               <div className="bg-gray-50 p-4 rounded-lg mt-4">
                 <h5 className="font-semibold text-gray-800 mb-2">معلومات الإعلان</h5>
                 <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">رقم الإعلان: </span>
+                    <span>{selectedAd.id}</span>
+                  </div>
                   <div>
                     <span className="text-gray-600">الفترة: </span>
                     <span>من {formatDate(selectedAd.start_date)} إلى {formatDate(selectedAd.end_date)}</span>
@@ -842,6 +955,29 @@ const AdsManagement = () => {
                   </div>
                 </div>
               </div>
+
+              {/* معلومات المالك */}
+              {selectedAd.property.user && (
+                <div className="bg-blue-50 p-4 rounded-lg mt-4">
+                  <h5 className="font-semibold text-gray-800 mb-3">معلومات المالك</h5>
+                  <div className="flex items-center space-x-3 space-x-reverse">
+                    {selectedAd.property.user.profile?.image_url && (
+                      <img 
+                        src={selectedAd.property.user.profile.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} 
+                        alt={selectedAd.property.user.first_name || 'مستخدم'}
+                        className="w-12 h-12 object-cover rounded-full"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">
+                        {selectedAd.property.user.first_name || ''} {selectedAd.property.user.last_name || ''}
+                      </p>
+                      <p className="text-sm text-gray-600">{selectedAd.property.user.email}</p>
+                      <p className="text-sm text-gray-600">{selectedAd.property.user.phone_number}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="p-6 border-t border-gray-200 flex justify-end space-x-3 space-x-reverse">
@@ -851,18 +987,67 @@ const AdsManagement = () => {
               >
                 إغلاق
               </button>
-              <button 
-              onClick={() => handleOpenWhatsApp(selectedAd.property.user.phone_number)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                التواصل مع المالك
-              </button>
-              <button 
-              onClick={() => handleCall(selectedAd.property.user.phone_number)}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                اتصال مباشر
-              </button>
+              {selectedAd.property.user?.phone_number && (
+                <>
+                  <button 
+                    onClick={() => handleOpenWhatsApp(selectedAd.property.user.phone_number)}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
+                  >
+                    <i className="fab fa-whatsapp ml-2"></i>
+                    واتساب
+                  </button>
+                  <button 
+                    onClick={() => handleCall(selectedAd.property.user.phone_number)}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                  >
+                    <i className="fas fa-phone ml-2"></i>
+                    اتصال
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {showImageModal && selectedAd && selectedAd.property && selectedAd.property.images && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl w-full max-h-[90vh]">
+            <button 
+              onClick={closeImageModal}
+              className="absolute top-4 right-4 z-10 text-white text-2xl hover:text-gray-300"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+            
+            <div className="relative h-full">
+              <img 
+                src={selectedAd.property.images[currentImageIndex]?.image_url?.replace("http://116.203.254.150:8001", "https://aqargo.duckdns.org")} 
+                alt={`صورة ${currentImageIndex + 1}`}
+                className="w-full h-full object-contain max-h-[80vh]"
+              />
+              
+              {selectedAd.property.images.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition duration-200"
+                  >
+                    <i className="fas fa-chevron-left"></i>
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition duration-200"
+                  >
+                    <i className="fas fa-chevron-right"></i>
+                  </button>
+                  
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded-full">
+                    {currentImageIndex + 1} / {selectedAd.property.images.length}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
